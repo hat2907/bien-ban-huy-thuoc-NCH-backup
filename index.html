@@ -253,6 +253,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-form] .ndc .psr{display:inline!important;width:auto!important;flex:0 0 auto;font-size:9.5px!important;text-align:left;white-space:nowrap;}
   body[data-ps=s-form] .para{margin:5px 0!important;}
   body[data-ps=s-form] .section-title{margin-top:8px!important;margin-bottom:4px!important;}
+  body[data-ps=s-form] .section-title[style*="margin-top:16mm"]{margin-top:16mm!important;}
   body[data-ps=s-form] .method-row{margin-bottom:4px!important;}
   body[data-ps=s-form] .method-r .nl{margin-bottom:2px!important;}
   body[data-ps=s-form] .tl{margin:5px 0!important;}
@@ -525,7 +526,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <div class="page">
       <div class="barcode-area" id="bc-p1"><svg class="bc-svg" id="bc-svg-p1"></svg><div class="msbb" id="bc-msbb-p1"></div></div>
       <div class="head-row">
-        <div class="head-col"><p class="bold upper">Bộ Y tế</p><p class="bold upper underline">Bệnh viện Nhi Trung ương</p></div>
+        <div class="head-col" style="padding-left:24mm;"><p class="bold upper">Bộ Y tế</p><p class="bold upper underline">Bệnh viện Nhi Trung ương</p></div>
         <div class="head-col head-right">
           <p class="bold upper">Cộng hoà xã hội chủ nghĩa Việt Nam</p>
           <p class="bold line2 underline">Độc lập - Tự do - Hạnh phúc</p>
@@ -603,7 +604,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <!-- PAGE 2 -->
     <div class="page">
       <div class="barcode-area" id="bc-p2"><svg class="bc-svg" id="bc-svg-p2"></svg><div class="msbb" id="bc-msbb-p2"></div></div>
-      <div class="section-title">2. Tiến hành tiêu hủy</div>
+      <div class="section-title" style="margin-top:16mm;">2. Tiến hành tiêu hủy</div>
       <p class="para">Căn cứ đề xuất hủy của <span id="khoaP2Display" class="khoa-input" style="display:inline;white-space:nowrap;border-bottom:1px dotted var(--hi);min-width:0;"></span>, Bệnh viện tiến hành hủy bao bì tiếp xúc trực tiếp và thuốc gây nghiện, thuốc hướng thần, tiền chất dạng dung dịch chưa sử dụng hết đơn vị đóng gói nhỏ nhất với các nội dung như sau:</p>
       <div class="khoa-line">
         <label class="bold" style="white-space:nowrap;">Địa điểm:</label>
@@ -996,7 +997,7 @@ function addRow(){
     <td class="wrap-cell dd-cell"><input type="text" class="dd-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
     <td class="wrap-cell bs-cell"><input type="text" class="bs-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
     <td class="wrap-cell ds-cell"><input type="text" class="ds-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
-    <td class="thuc-huy-cell"><input type="text" class="thuc-huy-inp" oninput="this.classList.toggle('hv',!!this.value)" placeholder="x / lệch"></td>
+    <td class="thuc-huy-cell"><input type="text" class="thuc-huy-inp" readonly tabindex="-1" style="cursor:default;background:transparent;text-align:center;font-size:11px;" title="Điền tay trên bản in"></td>
     <td class="row-act" style="white-space:nowrap;">
       <button onclick="this.closest('tr').remove();this.closest('tr')?._noteRow?.remove();renumber();">✕</button>
       <button class="btn-note" title="Ghi chú" onclick="toggleNoteRow(this)">📝</button>
@@ -1232,13 +1233,15 @@ async function saveForm(){
   const su=localStorage.getItem('scriptUrl');
   if(!su){alert('Chưa cấu hình URL Apps Script (vào Trang chủ → Cấu hình lưu biên bản).');return;}
   const ngay=`${document.getElementById('curDay').textContent}/${document.getElementById('curMonth').textContent}/${document.getElementById('curYear').textContent}`;
-  const HEADER=['Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Dược sĩ xác nhận','Ghi chú','Khoa (trang 2)','Địa điểm','Thời gian','TV1','TV2','TV3','TV4','TV5','Giờ KT','Phút KT','Báo cáo lên'];
+  // Build barcode code before fetch so it can be included in the sheet data
+  const barcodeCode=buildBarcodeCode(khoa);
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Dược sĩ xác nhận','Ghi chú','Khoa (trang 2)','Địa điểm','Thời gian','TV1','TV2','TV3','TV4','TV5','Giờ KT','Phút KT','Báo cáo lên'];
   const now=new Date().toLocaleString('vi-VN');
   const dr=[];
   rows.forEach((tr,i)=>{
     const tds=[...tr.querySelectorAll('td')];
     const txt=td=>td?.querySelector('input[type=text]:not(.ss-inp):not(.nv),select')?.value?.trim()||td?.textContent?.trim()||'';
-    dr.push([now,ngay,khoa,i+1,
+    dr.push([barcodeCode,now,ngay,khoa,i+1,
       tr._ss?.tt?.value||'',tr._ss?.hc?.value||'',tr._ss?.nd?.value||'',tr._ss?.sl?.value||'',tr._ss?.dvt?.value||'',
       // bb-qty: integer → send as number
       (()=>{const v=txt(tds[6]);const n=parseInt(v,10);return isNaN(n)?v:n;})(),
@@ -1271,7 +1274,7 @@ async function saveForm(){
     document.querySelectorAll('.note-input').forEach(i=>i.disabled=true);
     document.querySelectorAll('.add-bar button').forEach(b=>b.disabled=true);
     // Generate barcode
-    generateBarcodes(buildBarcodeCode(khoa));
+    generateBarcodes(barcodeCode);
   }catch(e){
     bs.textContent='💾 Lưu biên bản';bs.disabled=false;
     alert('Lỗi gửi dữ liệu: '+e.message);
@@ -1300,16 +1303,14 @@ function generateBarcodes(code){
     const msbb=document.getElementById(`bc-msbb-${p}`);
     const area=document.getElementById(`bc-${p}`);
     if(!svg||!msbb||!area||typeof JsBarcode==='undefined') return;
-    JsBarcode(svg,code,{format:'CODE128',width:1.5,height:32,displayValue:false,margin:0});
+    JsBarcode(svg,code,{format:'CODE128',width:1.2,height:26,displayValue:false,margin:0});
     area.classList.add('show');
-    // Match text width to barcode SVG width
     const svgW=svg.getAttribute('width')||svg.getBBox?.()?.width||80;
     const label='MSBB: '+code;
     msbb.textContent=label;
     msbb.style.width=svgW+'px';
     msbb.style.display='block';
-    // Calculate letter-spacing to fill barcode width
-    const baseSize=7;
+    const baseSize=10.5;
     msbb.style.fontSize=baseSize+'px';
     const charApproxW=baseSize*0.6;
     const naturalW=charApproxW*label.length;
