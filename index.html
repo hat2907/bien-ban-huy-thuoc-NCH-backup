@@ -1250,7 +1250,7 @@ async function saveForm(){
   const ngay=`${document.getElementById('curDay').textContent}/${document.getElementById('curMonth').textContent}/${document.getElementById('curYear').textContent}`;
   // Build barcode code before fetch so it can be included in the sheet data
   const barcodeCode=buildBarcodeCode(khoa);
-  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Số lượng bao bì','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Khoa (trang 2)','Địa điểm','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT','Báo cáo lên','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)'];
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Số lượng bao bì','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
   const now=new Date().toLocaleString('vi-VN');
   const dr=[];
   rows.forEach((tr,i)=>{
@@ -1272,14 +1272,13 @@ async function saveForm(){
       (()=>{const v=tds[11]?.querySelector('.tyle-result')?.value?.trim()||'';if(!v)return'';const n=parseFloat(v.replace(/\./g,'').replace(',','.'));return isNaN(n)?v:n;})(),
       tr.querySelector('.dd-inp')?.value?.trim()||'',tr.querySelector('.bs-inp')?.value?.trim()||'',
       tr._noteRow?.querySelector('.note-input')?.value?.trim()||'',
-      document.getElementById('khoaInput')?.value||'',document.getElementById('diaDiem')?.value||'',
-      document.getElementById('thoiGian')?.value||'',
-      ...[...document.querySelectorAll('.tv')].map(i=>i.value||''),
-      document.getElementById('gioKT')?.value||'',document.getElementById('phutKT')?.value||'',
-      document.getElementById('baoCao')?.value||'',
       i===0?document.getElementById('signDs')?.value?.trim()||'':'',
       i===0?document.getElementById('signDd')?.value?.trim()||'':'',
-      i===0?document.getElementById('signLd')?.value?.trim()||'':'']);
+      i===0?document.getElementById('signLd')?.value?.trim()||'':'',
+      i===0?document.getElementById('thoiGian')?.value||'':'',
+      ...(i===0?[...document.querySelectorAll('.tv')].map(el=>el.value||''):Array(6).fill('')),
+      i===0?document.getElementById('gioKT')?.value||'':'',
+      i===0?document.getElementById('phutKT')?.value||'':'']);
   });
   const bs=document.getElementById('btnSave');
   bs.textContent='⏳ Đang lưu…';bs.disabled=true;
@@ -1303,10 +1302,16 @@ async function saveForm(){
 /* ── BARCODE ── */
 function getBarcodeCounter(){
   const n=new Date();
-  const dayKey=`bcDay_${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}`;
-  const prev=parseInt(localStorage.getItem(dayKey)||'0')+1;
-  localStorage.setItem(dayKey,prev);
-  return String(prev).padStart(3,'0');
+  const today=`${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}`;
+  // Single global counter per day (không theo khoa). Reset to 001 when date changes.
+  if(localStorage.getItem('bcLastDay')!==today){
+    localStorage.setItem('bcLastDay',today);
+    localStorage.setItem('bcCount','1');
+    return '001';
+  }
+  const next=parseInt(localStorage.getItem('bcCount')||'0')+1;
+  localStorage.setItem('bcCount',String(next));
+  return String(next).padStart(3,'0');
 }
 function buildBarcodeCode(khoa){
   const n=new Date();
