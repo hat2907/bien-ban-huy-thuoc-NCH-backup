@@ -192,7 +192,10 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .sb2{width:46%;text-align:center;font-size:12px;}
 .sb2 .role{font-weight:bold;margin:0;}
 .sb2 .hint{font-style:italic;font-size:10.5px;}
-.section-title{font-weight:bold;margin-top:22px;margin-bottom:7px;}
+.sign-names-row{display:flex;gap:6px;margin-top:2px;}
+.sign-nc{flex:1;text-align:center;font-size:11px;display:flex;flex-direction:column;justify-content:flex-end;min-height:65px;}
+.sign-nc .snname{font-weight:bold;font-size:11px;}
+.sign-nc .snkhoa{font-size:10px;}
 .pg-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;padding-top:16px;}
 .method-row{display:flex;justify-content:space-between;margin-bottom:9px;gap:22px;}
 .method-l{width:58%;}.method-r{width:40%;}
@@ -633,7 +636,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
         </div>
         <div class="method-r">
           <p class="bold" style="margin-top:-2.4em;margin-bottom:5px;">Thành phần tham gia:</p>
-          <div class="nl"><span class="idx">1.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Khoa Dược, Thành viên Hội đồng hủy thuốc</span></div>
+          <div class="nl"><span class="idx">1.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
           <div class="nl"><span class="idx">2.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
           <div class="nl"><span class="idx">3.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
           <div class="nl"><span class="idx">4.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Khoa Dược, Nhân viên thu hồi bao bì TXTT</span></div>
@@ -651,8 +654,20 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       <p style="margin:4px 0;line-height:1.4;">Biên bản hủy thuốc được báo cáo lên <input id="baoCao" style="border:none;border-bottom:1px dotted var(--hi);width:240px;font-family:inherit;font-size:inherit;font-style:inherit;" oninput="this.classList.toggle('hv',!!this.value)"></p>
       <p style="margin:4px 0;line-height:1.4;">Biên bản này được lập thành 01 bản, Hội đồng hủy thuốc lưu bản chính.</p>
       <div class="sign-row2" style="margin-top:36px;">
-        <div class="sb2"><p class="role">THÀNH VIÊN THAM GIA HỦY</p><div style="height:65px;"></div></div>
-        <div class="sb2"><p class="role">HỘI ĐỒNG HỦY THUỐC</p><div style="height:65px;"></div></div>
+        <div class="sb2"><p class="role">THÀNH VIÊN THAM GIA HỦY</p>
+          <div class="sign-names-row">
+            <div class="sign-nc" id="snc4"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc5"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc6"><div style="height:48px;"></div></div>
+          </div>
+        </div>
+        <div class="sb2"><p class="role">HỘI ĐỒNG HỦY THUỐC</p>
+          <div class="sign-names-row">
+            <div class="sign-nc" id="snc1"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc2"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc3"><div style="height:48px;"></div></div>
+          </div>
+        </div>
       </div>
       <div class="pg-foot">
         <span>BM7/QTQL.D.22.1</span>
@@ -689,6 +704,7 @@ async function refreshConnections(){
   if(localStorage.getItem('sheetUrl'))    p.push(connectSheet(true));
   if(localStorage.getItem('deptSheetUrl'))p.push(loadDeptsFromSheet(true));
   if(localStorage.getItem('outSheetUrl')) p.push(loadOutSheet(true));
+  if(localStorage.getItem('scheduleUrl')) p.push(loadScheduleSheet(true));
   await Promise.allSettled(p);
 }
 
@@ -719,10 +735,11 @@ async function applyConfig(silent){
     });
     // Map keys to localStorage entries and input fields
     const MAP={
-      drug_url:   {ls:'sheetUrl',    el:'sheetUrl'},
-      script_url: {ls:'scriptUrl',   el:'scriptUrl'},
-      dept_url:   {ls:'deptSheetUrl',el:'deptSheetUrl'},
-      out_url:    {ls:'outSheetUrl', el:'outSheetUrl'},
+      drug_url:     {ls:'sheetUrl',    el:'sheetUrl'},
+      script_url:   {ls:'scriptUrl',   el:'scriptUrl'},
+      dept_url:     {ls:'deptSheetUrl',el:'deptSheetUrl'},
+      out_url:      {ls:'outSheetUrl', el:'outSheetUrl'},
+      schedule_url: {ls:'scheduleUrl', el:'scheduleUrl'},
     };
     let loaded=0;
     for(const [key,{ls,el}] of Object.entries(MAP)){
@@ -1248,6 +1265,10 @@ async function saveForm(){
   const su=localStorage.getItem('scriptUrl');
   if(!su){alert('Chưa cấu hình URL Apps Script (vào Trang chủ → Cấu hình lưu biên bản).');return;}
   const ngay=`${document.getElementById('curDay').textContent}/${document.getElementById('curMonth').textContent}/${document.getElementById('curYear').textContent}`;
+  // Auto-fill members from schedule database before save
+  const saveDateISO=new Date().toISOString().split('T')[0];
+  autoFillMembers(saveDateISO,khoa);
+
   // Build barcode code before fetch so it can be included in the sheet data
   const barcodeCode=buildBarcodeCode(khoa);
   const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Số lượng bao bì','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
@@ -1545,9 +1566,71 @@ function exportRptXLSX(){
   XLSX.writeFile(wb,`BM8_${khoa.replace(/[^\w\-]/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+/* ── LỊCH HỦY THUỐC (schedule) ── */
+async function loadScheduleSheet(silent){
+  const raw=silent?localStorage.getItem('scheduleUrl'):(document.getElementById('scheduleUrl')?.value||'').trim();
+  if(!raw)return;
+  const u=buildCsvUrl(raw);if(!u)return;
+  try{
+    const res=await fetch(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const rows=parseCsv(await res.text());
+    SCHEDULE_DATA=rows.slice(1).filter(r=>r.some(c=>c)).map(r=>({
+      stt:(r[0]||'').trim(),ten:(r[1]||'').trim(),khoa:(r[2]||'').trim(),coSo:(r[3]||'').trim(),ngay:(r[4]||'').trim()
+    }));
+  }catch(e){if(!silent)console.error('loadScheduleSheet:',e);}
+}
+function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
+function findScheduleDate(targetDate,coso){
+  const filtered=SCHEDULE_DATA.filter(r=>!coso||r.coSo===coso||r.coSo==='');
+  const dates=[...new Set(filtered.map(r=>r.ngay).filter(Boolean))];
+  const parsed=dates.map(d=>({str:d,date:parseShedDate(d)})).filter(d=>d.date);
+  const exact=parsed.find(d=>d.date.toDateString()===targetDate.toDateString());
+  if(exact)return exact.str;
+  const future=parsed.filter(d=>d.date>=targetDate).sort((a,b)=>a.date-b.date);
+  if(future.length)return future[0].str;
+  const past=parsed.filter(d=>d.date<targetDate).sort((a,b)=>b.date-a.date);
+  return past.length?past[0].str:null;
+}
+function autoFillMembers(saveDateStr,khoa){
+  if(!SCHEDULE_DATA.length)return;
+  const targetDate=new Date(saveDateStr);if(isNaN(targetDate))return;
+  const coso=DEPT_COSO[khoa]||'';
+  const matchDate=findScheduleDate(targetDate,coso);if(!matchDate)return;
+  const members=SCHEDULE_DATA
+    .filter(r=>r.ngay===matchDate&&(!coso||r.coSo===coso||r.coSo===''))
+    .sort((a,b)=>parseInt(a.stt)-parseInt(b.stt));
+  const tvInputs=[...document.querySelectorAll('.tv')];
+  [1,2,3,4].forEach(pos=>{
+    const m=members.find(r=>parseInt(r.stt)===pos);
+    const inp=tvInputs[pos-1];if(!inp)return;
+    if(m){inp.value=m.ten;inp.classList.toggle('hv',!!m.ten);}
+    if(pos<=3&&m&&m.khoa){
+      // Update .pre span with khoa from schedule
+      const nlDiv=inp.closest('.nl');const pre=nlDiv?.querySelector('.pre');
+      if(pre)pre.innerHTML=`<i>${m.khoa}, </i>Thành viên Hội đồng hủy thuốc`;
+    }
+  });
+  updateSignBlocks(members);
+}
+function updateSignBlocks(members){
+  [1,2,3].forEach(pos=>{
+    const el=document.getElementById(`snc${pos}`);if(!el)return;
+    const m=members.find(r=>parseInt(r.stt)===pos);
+    el.innerHTML=m&&m.ten
+      ?`<div style="height:48px;"></div><div class="snname">${m.ten}</div><div class="snkhoa">${m.khoa?`<i>${m.khoa}, </i>`:''}Thành viên Hội đồng hủy thuốc</div>`
+      :`<div style="height:48px;"></div>`;
+  });
+  [4,5,6].forEach(pos=>{
+    const el=document.getElementById(`snc${pos}`);if(!el)return;
+    const m=pos<=4?members.find(r=>parseInt(r.stt)===pos):null;
+    el.innerHTML=m&&m.ten
+      ?`<div style="height:48px;"></div><div class="snname">${m.ten}</div>`
+      :`<div style="height:48px;"></div>`;
+  });
+}
+
 /* ── DEPT MANAGEMENT ── */
-let DEPT_CODES = JSON.parse(localStorage.getItem('deptCodes') || '{}'); // {tên khoa: "01"}
-let DEPTS = JSON.parse(localStorage.getItem('depts') || '[]');
+let SCHEDULE_DATA = []; // [{stt,ten,khoa,coSo,ngay}] from lịch hủy sheet
 
 function renderDeptList(){
   const ul = document.getElementById('deptList');
@@ -1602,15 +1685,16 @@ async function loadDeptsFromSheet(silent){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = parseCsv(await res.text());
     // Column A: tên khoa; Column B: mã khoa 2 số
-    const newDepts = [], newCodes = {};
+    const newDepts = [], newCodes = {}, newCoSo = {};
     rows.slice(1).forEach(r=>{
       const name=(r[0]||'').trim();
       const code=(r[1]||'').trim();
-      if(name){ newDepts.push(name); if(code) newCodes[name]=code.padStart(2,'0'); }
+      const coso=(r[2]||'').trim();
+      if(name){ newDepts.push(name); if(code) newCodes[name]=code.padStart(2,'0'); if(coso) newCoSo[name]=coso; }
     });
     if(!newDepts.length) throw new Error('Không đọc được danh sách khoa. Sheet cần có cột "Tên khoa/Trung tâm".');
-    DEPTS = newDepts; DEPT_CODES = newCodes;
-    if(!silent){ localStorage.setItem('deptSheetUrl', raw); localStorage.setItem('deptCodes', JSON.stringify(newCodes)); }
+    DEPTS = newDepts; DEPT_CODES = newCodes; DEPT_COSO = newCoSo;
+    if(!silent){ localStorage.setItem('deptSheetUrl', raw); localStorage.setItem('deptCodes', JSON.stringify(newCodes)); localStorage.setItem('deptCoSo', JSON.stringify(newCoSo)); }
     saveDepts();renderDeptList();
     if(!silent)setSt('deptSheetStatus','ok',`✅ Đã tải ${depts.length} khoa/trung tâm`);
   }catch(e){
