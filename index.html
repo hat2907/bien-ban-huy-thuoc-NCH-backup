@@ -1586,57 +1586,55 @@ async function loadScheduleSheet(silent){
   }catch(e){if(!silent)console.error('loadScheduleSheet:',e);}
 }
 function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
-function findScheduleDate(targetDate,coso){
-  const cosoN=(coso||'').trim().toLowerCase();
-  const filtered=SCHEDULE_DATA.filter(r=>{
+function findMemberForPos(pos, targetDate, cosoN){
+  // For each STT position, independently find the nearest-date entry
+  const candidates=SCHEDULE_DATA.filter(r=>{
+    if(parseInt(r.stt)!==pos)return false;
     if(!cosoN)return true;
     const rc=r.coSo.trim().toLowerCase();
     return rc===cosoN||rc==='';
   });
-  const dates=[...new Set(filtered.map(r=>r.ngay).filter(Boolean))];
-  const parsed=dates.map(d=>({str:d,date:parseShedDate(d)})).filter(d=>d.date);
-  const exact=parsed.find(d=>d.date.toDateString()===targetDate.toDateString());
-  if(exact)return exact.str;
-  const future=parsed.filter(d=>d.date>=targetDate).sort((a,b)=>a.date-b.date);
-  if(future.length)return future[0].str;
-  const past=parsed.filter(d=>d.date<targetDate).sort((a,b)=>b.date-a.date);
-  return past.length?past[0].str:null;
+  if(!candidates.length)return null;
+  const parsed=candidates
+    .map(r=>({...r,_date:parseShedDate(r.ngay)}))
+    .filter(r=>r._date);
+  // Exact date match first
+  const exact=parsed.find(r=>r._date.toDateString()===targetDate.toDateString());
+  if(exact)return exact;
+  // Nearest future date
+  const future=parsed.filter(r=>r._date>=targetDate).sort((a,b)=>a._date-b._date);
+  if(future.length)return future[0];
+  // Nearest past date as fallback
+  const past=parsed.filter(r=>r._date<targetDate).sort((a,b)=>b._date-a._date);
+  return past.length?past[0]:null;
 }
+
 function autoFillMembers(saveDateStr,khoa){
   if(!SCHEDULE_DATA.length)return;
   const targetDate=new Date(saveDateStr);if(isNaN(targetDate))return;
-  const coso=(DEPT_COSO[khoa]||'').trim().toLowerCase();
-  const matchDate=findScheduleDate(targetDate,coso);if(!matchDate)return;
+  const cosoN=(DEPT_COSO[khoa]||'').trim().toLowerCase();
 
-  // Filter members: date must match; coSo: case-insensitive, or empty coSo = universal
-  const members=SCHEDULE_DATA
-    .filter(r=>{
-      if(r.ngay!==matchDate)return false;
-      if(!coso)return true; // no facility set → accept all
-      const rc=r.coSo.trim().toLowerCase();
-      return rc===coso||rc===''; // match facility or universal entry
-    })
-    .sort((a,b)=>parseInt(a.stt)-parseInt(b.stt));
-
-  // Find TV input by explicit position (using .idx span value — more robust than array index)
+  // Find TV input by .idx span value — robust, not array-index dependent
   function getTvByPos(pos){
     for(const nl of document.querySelectorAll('.method-r .nl')){
       const idx=nl.querySelector('.idx');
-      if(idx&&parseInt(idx.textContent)===pos){return nl.querySelector('.tv');}
+      if(idx&&parseInt(idx.textContent)===pos)return nl.querySelector('.tv');
     }
     return null;
   }
 
+  const allMembers=[];
   [1,2,3,4].forEach(pos=>{
-    const m=members.find(r=>parseInt(r.stt)===pos);
+    const m=findMemberForPos(pos,targetDate,cosoN);
     const inp=getTvByPos(pos);if(!inp)return;
     if(m&&m.ten){inp.value=m.ten;inp.classList.toggle('hv',true);}
     if(pos<=3&&m&&m.khoa){
       const pre=inp.closest('.nl')?.querySelector('.pre');
       if(pre)pre.innerHTML=`<i>${m.khoa}, </i>Thành viên Hội đồng hủy thuốc`;
     }
+    if(m)allMembers.push({...m,stt:String(pos)});
   });
-  updateSignBlocks(members);
+  updateSignBlocks(allMembers);
 }
 function updateSignBlocks(members){
   [1,2,3].forEach(pos=>{
