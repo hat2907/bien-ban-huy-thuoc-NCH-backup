@@ -1587,7 +1587,12 @@ async function loadScheduleSheet(silent){
 }
 function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
 function findScheduleDate(targetDate,coso){
-  const filtered=SCHEDULE_DATA.filter(r=>!coso||r.coSo===coso||r.coSo==='');
+  const cosoN=(coso||'').trim().toLowerCase();
+  const filtered=SCHEDULE_DATA.filter(r=>{
+    if(!cosoN)return true;
+    const rc=r.coSo.trim().toLowerCase();
+    return rc===cosoN||rc==='';
+  });
   const dates=[...new Set(filtered.map(r=>r.ngay).filter(Boolean))];
   const parsed=dates.map(d=>({str:d,date:parseShedDate(d)})).filter(d=>d.date);
   const exact=parsed.find(d=>d.date.toDateString()===targetDate.toDateString());
@@ -1600,19 +1605,34 @@ function findScheduleDate(targetDate,coso){
 function autoFillMembers(saveDateStr,khoa){
   if(!SCHEDULE_DATA.length)return;
   const targetDate=new Date(saveDateStr);if(isNaN(targetDate))return;
-  const coso=DEPT_COSO[khoa]||'';
+  const coso=(DEPT_COSO[khoa]||'').trim().toLowerCase();
   const matchDate=findScheduleDate(targetDate,coso);if(!matchDate)return;
+
+  // Filter members: date must match; coSo: case-insensitive, or empty coSo = universal
   const members=SCHEDULE_DATA
-    .filter(r=>r.ngay===matchDate&&(!coso||r.coSo===coso||r.coSo===''))
+    .filter(r=>{
+      if(r.ngay!==matchDate)return false;
+      if(!coso)return true; // no facility set → accept all
+      const rc=r.coSo.trim().toLowerCase();
+      return rc===coso||rc===''; // match facility or universal entry
+    })
     .sort((a,b)=>parseInt(a.stt)-parseInt(b.stt));
-  const tvInputs=[...document.querySelectorAll('.tv')];
+
+  // Find TV input by explicit position (using .idx span value — more robust than array index)
+  function getTvByPos(pos){
+    for(const nl of document.querySelectorAll('.method-r .nl')){
+      const idx=nl.querySelector('.idx');
+      if(idx&&parseInt(idx.textContent)===pos){return nl.querySelector('.tv');}
+    }
+    return null;
+  }
+
   [1,2,3,4].forEach(pos=>{
     const m=members.find(r=>parseInt(r.stt)===pos);
-    const inp=tvInputs[pos-1];if(!inp)return;
-    if(m){inp.value=m.ten;inp.classList.toggle('hv',!!m.ten);}
+    const inp=getTvByPos(pos);if(!inp)return;
+    if(m&&m.ten){inp.value=m.ten;inp.classList.toggle('hv',true);}
     if(pos<=3&&m&&m.khoa){
-      // Update .pre span with khoa from schedule
-      const nlDiv=inp.closest('.nl');const pre=nlDiv?.querySelector('.pre');
+      const pre=inp.closest('.nl')?.querySelector('.pre');
       if(pre)pre.innerHTML=`<i>${m.khoa}, </i>Thành viên Hội đồng hủy thuốc`;
     }
   });
