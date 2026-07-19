@@ -131,7 +131,7 @@ td input:focus{outline:1px solid var(--ac);background:#eef5fc;}
 .barcode-area .bc-svg{display:block;}
 .barcode-area .msbb{font-family:"Courier New",Courier,monospace;font-size:7px;letter-spacing:0;margin-top:1px;white-space:nowrap;}
 .page{position:relative;}
-.thuc-huy-cell{text-align:center;vertical-align:middle;width:60px;}
+.thuc-huy-cell{text-align:center;vertical-align:middle;width:90px;}
 .thuc-huy-inp{text-align:center;font-size:11px;}
 /* ── Searchable select ── */
 .ss{position:relative;display:block;}
@@ -193,7 +193,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .sb2 .role{font-weight:bold;margin:0;}
 .sb2 .hint{font-style:italic;font-size:10.5px;}
 .sign-names-row{display:flex;gap:6px;margin-top:2px;}
-.sign-nc{flex:1;text-align:center;font-size:11px;display:flex;flex-direction:column;justify-content:flex-end;min-height:65px;}
+.sign-nc{flex:1;text-align:center;font-size:11px;display:flex;flex-direction:column;justify-content:flex-end;min-height:97px;}
 .sign-nc .snname{font-weight:bold;font-size:11px;}
 .sign-nc .snkhoa{font-size:10px;}
 .pg-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;padding-top:16px;}
@@ -656,16 +656,16 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       <div class="sign-row2" style="margin-top:36px;">
         <div class="sb2"><p class="role">THÀNH VIÊN THAM GIA HỦY</p>
           <div class="sign-names-row">
-            <div class="sign-nc" id="snc4"><div style="height:48px;"></div></div>
-            <div class="sign-nc" id="snc5"><div style="height:48px;"></div></div>
-            <div class="sign-nc" id="snc6"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc4"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc5"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc6"><div style="height:80px;"></div></div>
           </div>
         </div>
         <div class="sb2"><p class="role">HỘI ĐỒNG HỦY THUỐC</p>
           <div class="sign-names-row">
-            <div class="sign-nc" id="snc1"><div style="height:48px;"></div></div>
-            <div class="sign-nc" id="snc2"><div style="height:48px;"></div></div>
-            <div class="sign-nc" id="snc3"><div style="height:48px;"></div></div>
+            <div class="sign-nc" id="snc1"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc2"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc3"><div style="height:80px;"></div></div>
           </div>
         </div>
       </div>
@@ -1617,15 +1617,15 @@ function updateSignBlocks(members){
     const el=document.getElementById(`snc${pos}`);if(!el)return;
     const m=members.find(r=>parseInt(r.stt)===pos);
     el.innerHTML=m&&m.ten
-      ?`<div style="height:48px;"></div><div class="snname">${m.ten}</div><div class="snkhoa">${m.khoa?`<i>${m.khoa}, </i>`:''}Thành viên Hội đồng hủy thuốc</div>`
-      :`<div style="height:48px;"></div>`;
+      ?`<div style="height:80px;"></div><div class="snname">${m.ten}</div>`
+      :`<div style="height:80px;"></div>`;
   });
   [4,5,6].forEach(pos=>{
     const el=document.getElementById(`snc${pos}`);if(!el)return;
     const m=pos<=4?members.find(r=>parseInt(r.stt)===pos):null;
     el.innerHTML=m&&m.ten
-      ?`<div style="height:48px;"></div><div class="snname">${m.ten}</div>`
-      :`<div style="height:48px;"></div>`;
+      ?`<div style="height:80px;"></div><div class="snname">${m.ten}</div>`
+      :`<div style="height:80px;"></div>`;
   });
 }
 
@@ -1813,7 +1813,10 @@ document.addEventListener('scroll', e=>{
 /* ── INIT ── */
 renderDeptList();
 updateKhoaDropdowns();
-addRow();addRow();addRow();
+// Ensure 3 default rows even when opening #form directly
+if(!document.querySelectorAll('#tbody tr:not(.note-row)').length){
+  addRow();addRow();addRow();
+}
 // Auto-load all connections on startup
 silentRefreshAll();
 </script>
