@@ -557,14 +557,13 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
             <th rowspan="2" style="width:76px;">Số lô</th>
             <th rowspan="2" style="width:70px;">Đơn vị tính (ĐVT)</th>
             <th rowspan="2" style="width:65px;">Số lượng bao bì TXTT cần hủy</th>
-            <th colspan="8">Tình trạng thuốc GN-HT-TC không sử dụng hết</th>
+            <th colspan="7">Tình trạng thuốc GN-HT-TC không sử dụng hết</th>
             <th rowspan="2" style="width:58px;">Dược sĩ xác nhận (***)</th>
             <th rowspan="2" style="width:60px;">Thực hủy<br><i>(****)</i></th>
             <th rowspan="2" class="row-act"></th>
           </tr>
           <tr>
             <th style="width:76px;">Bao bì chứa thuốc</th>
-            <th style="width:50px;">Số lượng</th>
             <th style="width:82px;">Dịch truyền pha 1 ĐVT thuốc (*)</th>
             <th style="width:96px;">Nồng độ thuốc GN-HT-TC không sử dụng hết</th>
             <th style="width:65px;">Tổng thể tích cần hủy (ml)</th>
@@ -1025,7 +1024,6 @@ function addRow(){
     <td><div class="ss" data-f="dvt"><input type="text" class="ss-inp" autocomplete="off" spellcheck="false" disabled><div class="ss-list"></div></div><span class="psr"></span></td>
     <td><div class="numwrap" style="position:relative;"><input type="text" class="bb-qty" inputmode="numeric" placeholder="0" oninput="this.classList.toggle('hv',!!this.value)"><span class="iw"></span></div></td>
     <td><div class="selwrap"><select class="bbdp"><option value=""></option><option value="Ống">Ống</option><option value="Lọ">Lọ</option><option value="Bơm tiêm">Bơm tiêm</option><option value="Chai">Chai</option><option value="Túi">Túi</option></select></div><span class="psr"></span></td>
-    <td><div class="numwrap"><input type="text" class="bb-sl-inp" inputmode="numeric" placeholder="0" disabled oninput="this.classList.toggle('hv',!!this.value)"><span class="iw"></span></div></td>
     <td><div class="selwrap"><select class="dtp" onchange="this.classList.toggle('hv',!!this.value)">${makeOpts(['DW','NS','G5'])}</select></div><span class="psr"></span></td>
     <td><div class="ndc"><input type="text" class="nv" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><div class="selwrap"><select class="nu" onchange="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));">${makeOpts(['mg/ml','mcg/ml'])}</select></div><span class="psr"></span><span class="iw"></span></div></td>
     <td><div class="numwrap"><input type="text" class="vol-input" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><span class="iw"></span></div></td>
@@ -1044,7 +1042,7 @@ function addRow(){
   const noteRow=document.createElement('tr');
   noteRow.className='note-row';
   noteRow.style.display='none';
-  noteRow.innerHTML=`<td colspan="18"><div style="display:flex;align-items:center;gap:8px;"><label style="font-size:11px;white-space:nowrap;font-family:Arial,sans-serif;color:#666;">📝 Ghi chú:</label><input type="text" class="note-input" placeholder="Nhập ghi chú cho dòng trên. Không in kèm biên bản"></div></td>`;
+  noteRow.innerHTML=`<td colspan="17"><div style="display:flex;align-items:center;gap:8px;"><label style="font-size:11px;white-space:nowrap;font-family:Arial,sans-serif;color:#666;">📝 Ghi chú:</label><input type="text" class="note-input" placeholder="Nhập ghi chú cho dòng trên. Không in kèm biên bản"></div></td>`;
   document.getElementById('tbody').appendChild(noteRow);
   tr._noteRow=noteRow;
 
@@ -1096,12 +1094,11 @@ function addRow(){
   function applyBBDP(){
     const noDP=bbdpSel.value===''; // empty = Sử dụng hết logic
     const dtp=tr.querySelector('.dtp');
-    const bbSl=tr.querySelector('.bb-sl-inp');
     const nv=tr.querySelector('.nv');
     const nu=tr.querySelector('.nu');
     const vol=tr.querySelector('.vol-input');
     const tyle=tr.querySelector('.tyle-result');
-    [dtp,bbSl,nv,nu,vol].forEach(el=>{
+    [dtp,nv,nu,vol].forEach(el=>{
       if(!el)return;
       el.disabled=noDP;
       if(noDP){el.value='';el.classList.remove('hv');}
@@ -1120,7 +1117,6 @@ function addRow(){
   });
 
   attachIntGuard(tr.querySelector('.bb-qty'));
-  attachIntGuard(tr.querySelector('.bb-sl-inp'));
   attachDotGuard(tr.querySelector('.nv'));
   attachDotGuard(tr.querySelector('.vol-input'));
   tr.querySelector('.nv').addEventListener('input',()=>computeTyLe(tr));
@@ -1277,7 +1273,7 @@ async function saveForm(){
 
   // Build barcode code before fetch so it can be included in the sheet data
   const barcodeCode=buildBarcodeCode(khoa);
-  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Số lượng bao bì','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
   const now=new Date().toLocaleString('vi-VN');
   const dr=[];
   rows.forEach((tr,i)=>{
@@ -1288,7 +1284,6 @@ async function saveForm(){
       // bb-qty: integer → send as number
       (()=>{const v=txt(tds[6]);const n=parseInt(v,10);return isNaN(n)?v:n;})(),
       tr.querySelector('.bbdp')?.value||'',
-      (()=>{const v=tr.querySelector('.bb-sl-inp')?.value?.trim()||'';const n=parseInt(v,10);return isNaN(n)?'':n;})(),
       tr.querySelector('.dtp')?.value||'',
       // nv: convert "0,3" → 0.3 so Sheets doesn't store as text
       (()=>{const v=tr.querySelector('.nv')?.value?.trim()||'';if(!v)return'';const n=parseFloat(v.replace(',','.'));return isNaN(n)?v:n;})(),
@@ -1330,15 +1325,17 @@ async function saveForm(){
 function getBarcodeCounter(){
   const n=new Date();
   const today=`${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}`;
-  // Single global counter per day (không theo khoa). Reset to 001 when date changes.
-  if(localStorage.getItem('bcLastDay')!==today){
-    localStorage.setItem('bcLastDay',today);
-    localStorage.setItem('bcCount','1');
-    return '001';
+  // Single atomic key — global across all khoa, resets only on date change
+  let state;
+  try{state=JSON.parse(localStorage.getItem('bcState')||'{}');}catch{state={};}
+  let count;
+  if(state.date===today){
+    count=(parseInt(state.count)||0)+1;
+  } else {
+    count=1; // new day → reset to 1
   }
-  const next=parseInt(localStorage.getItem('bcCount')||'0')+1;
-  localStorage.setItem('bcCount',String(next));
-  return String(next).padStart(3,'0');
+  localStorage.setItem('bcState',JSON.stringify({date:today,count}));
+  return String(count).padStart(3,'0');
 }
 function buildBarcodeCode(khoa){
   const n=new Date();
