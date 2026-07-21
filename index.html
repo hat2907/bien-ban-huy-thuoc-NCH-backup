@@ -131,6 +131,11 @@ td input:focus{outline:1px solid var(--ac);background:#eef5fc;}
 .barcode-area .bc-svg{display:block;}
 .barcode-area .msbb{font-family:"Courier New",Courier,monospace;font-size:7px;letter-spacing:0;margin-top:1px;white-space:nowrap;}
 .page{position:relative;}
+/* Partial underline: gạch chân 2/3 giữa */
+.mid-ul{display:inline-block;position:relative;text-decoration:none;}
+.mid-ul::after{content:'';position:absolute;bottom:-1px;left:16.5%;width:67%;border-bottom:1px solid currentColor;}
+/* GN-HT-TC group cells AND headers: hồng nhạt trên màn hình */
+.gn-ht-tc{background:#fff0f3!important;}
 .thuc-huy-cell{text-align:center;vertical-align:middle;width:90px;}
 .thuc-huy-inp{text-align:center;font-size:11px;}
 /* ── Searchable select ── */
@@ -162,7 +167,7 @@ td select:focus{outline:1px solid var(--ac);background:#eef5fc;}
 .ndc .iw{top:32px;}
 .dvt-cell{font-size:11px;}
 /* Columns that need word-wrap (Điều dưỡng, Bác sĩ, Dược sĩ) */
-td.wrap-cell{white-space:normal;word-break:break-word;vertical-align:bottom;font-size:10px;text-align:center;}
+td.wrap-cell{white-space:normal;word-break:break-word;vertical-align:bottom;font-size:10px;text-align:center;padding-top:8px;}
 td.wrap-cell input{white-space:normal;word-break:break-word;height:auto;min-height:16px;overflow:visible;resize:none;font-size:10px;text-align:center;}
 /* Print: hide input, show mirror div; padding-top = blank signing line above name */
 td.wrap-cell .wrap-pv{display:none;white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:10px;text-align:center;}
@@ -194,7 +199,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .sb2 .hint{font-style:italic;font-size:10.5px;}
 .sign-names-row{display:flex;gap:6px;margin-top:2px;}
 .sign-nc{flex:1;text-align:center;font-size:11px;display:flex;flex-direction:column;justify-content:flex-end;min-height:97px;}
-.sign-nc .snname{font-weight:bold;font-size:11px;}
+.sign-nc .snc-inp{text-align:center;border:none;border-bottom:1px dotted var(--hi);width:90%;font-weight:bold;font-family:inherit;font-size:11px;background:transparent;}
+.sign-nc .snc-inp.hv{border-bottom:none;}
 .sign-nc .snkhoa{font-size:10px;}
 .pg-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;padding-top:16px;}
 .method-row{display:flex;justify-content:space-between;margin-bottom:9px;gap:10px;}
@@ -236,6 +242,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-form] .row-act{display:none!important;}
   body[data-ps=s-form] .thuc-huy-inp{border-bottom:none!important;}
   body[data-ps=s-form] .thuc-huy-cell{vertical-align:middle;}
+  body[data-ps=s-form] .sign-nc .snc-inp{border-bottom:none!important;}
+  body[data-ps=s-form] .gn-ht-tc{background:transparent!important;}
   body[data-ps=s-form] .form-wrap{background:#fff;padding:0;min-height:unset;}
   body[data-ps=s-form] .page{box-shadow:none;margin:0;padding:6mm 10mm 4mm;width:auto;min-height:190mm;page-break-after:always;}
   body[data-ps=s-form] input::placeholder{color:transparent!important;}
@@ -252,7 +260,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-form] .ndc .selwrap{display:none!important;}
   body[data-ps=s-form] .ndc input{width:auto!important;max-width:46px;flex:0 0 auto;text-align:center;}
   body[data-ps=s-form] td.wrap-cell input{display:none!important;}
-  body[data-ps=s-form] td.wrap-cell .wrap-pv{display:block!important;padding-top:12px;}
+  body[data-ps=s-form] td.wrap-cell .wrap-pv{display:block!important;padding-top:20px;}
   body[data-ps=s-form] tr.note-row{display:none!important;}
   body[data-ps=s-form] .ndc .psr{display:inline!important;width:auto!important;flex:0 0 auto;font-size:9.5px!important;text-align:left;white-space:nowrap;}
   body[data-ps=s-form] .para{margin:5px 0!important;}
@@ -262,7 +270,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-form] .method-r .nl{margin-bottom:2px!important;}
   body[data-ps=s-form] .tl{margin:5px 0!important;}
   body[data-ps=s-form] .sign-row2{margin-top:12px!important;}
-  body[data-ps=s-form] .sb2 div[style*="height"]{height:26px!important;}
+  body[data-ps=s-form] .sdt .date-hint{display:none!important;}
+  
   body[data-ps=s-form] .fnrow div[style*="height"]{height:26px!important;}
   body[data-ps=s-form] .fnrow{margin-top:8px!important;}
   body[data-ps=s-form] .pg-foot{padding-top:4px!important;}
@@ -397,7 +406,13 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   <div class="adm-body">
     <div class="acard">
       <h2>Apps Script — Lưu biên bản tự động</h2>
-      <div class="desc">Mỗi lần nhân viên bấm <b>"Lưu biên bản"</b>, dữ liệu được ghi tự động vào Google Sheet tổng hợp thông qua Apps Script. URL được tải từ cấu hình trung tâm.</div>
+      <div class="desc">Mỗi lần nhân viên bấm <b>"Lưu biên bản"</b>, dữ liệu được ghi tự động vào Google Sheet tổng hợp. Apps Script cũng đảm nhiệm <b>sinh mã biên bản (MSBB) tập trung</b> — đếm liên tục toàn bộ máy tính trong ngày, không bị trùng. URL được tải từ cấu hình trung tâm.</div>
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:11.5px;margin:8px 0;">
+        ⚠️ <b>Cần cập nhật Apps Script</b> để hỗ trợ đếm mã biên bản tập trung.<br>
+        Mở <b>Apps Script → Editor</b>, thay toàn bộ code bằng code ở link dưới, rồi Deploy lại (Web App):<br>
+        <code style="font-size:10px;word-break:break-all;">https://gist.github.com/hat2907/appscript_huy_thuoc</code><br>
+        (Hoặc liên hệ quản trị viên để được hỗ trợ cập nhật)
+      </div>
       <div class="rg">
         <input type="text" id="scriptUrl" placeholder="URL tự động tải từ cấu hình trung tâm" readonly style="background:#f8f8f8;color:#666;">
         <button class="btn btn-gh" onclick="testScript()">🧪 Test kết nối</button>
@@ -530,10 +545,10 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <div class="page">
       <div class="barcode-area" id="bc-p1"><svg class="bc-svg" id="bc-svg-p1"></svg><div class="msbb" id="bc-msbb-p1"></div></div>
       <div class="head-row">
-        <div class="head-col" style="padding-left:24mm;"><p class="bold upper">Bộ Y tế</p><p class="bold upper underline">Bệnh viện Nhi Trung ương</p></div>
+        <div class="head-col" style="padding-left:24mm;"><p class="upper">Bộ Y tế</p><p class="bold upper"><span class="mid-ul">Bệnh viện Nhi Trung ương</span></p></div>
         <div class="head-col head-right">
           <p class="bold upper">Cộng hoà xã hội chủ nghĩa Việt Nam</p>
-          <p class="bold line2 underline">Độc lập - Tự do - Hạnh phúc</p>
+          <p class="bold line2"><span class="mid-ul">Độc lập - Tự do - Hạnh phúc</span></p>
         </div>
       </div>
       <div class="title">Biên bản hủy bao bì tiếp xúc trực tiếp và thuốc GN-HT-TC không sử dụng hết đơn vị đóng gói nhỏ nhất</div>
@@ -556,20 +571,20 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
             <th rowspan="2" style="width:88px;">Nồng độ/hàm lượng</th>
             <th rowspan="2" style="width:76px;">Số lô</th>
             <th rowspan="2" style="width:70px;">Đơn vị tính (ĐVT)</th>
-            <th rowspan="2" style="width:65px;">Số lượng bao bì TXTT cần hủy</th>
-            <th colspan="7">Tình trạng thuốc GN-HT-TC không sử dụng hết</th>
+            <th rowspan="2" style="width:65px;">Số lượng bao bì của nhà cung cấp</th>
+            <th colspan="7" class="gn-ht-tc">Tình trạng thuốc GN-HT-TC không sử dụng hết</th>
             <th rowspan="2" style="width:58px;">Dược sĩ xác nhận (***)</th>
             <th rowspan="2" style="width:60px;">Thực hủy<br><i>(****)</i></th>
             <th rowspan="2" class="row-act"></th>
           </tr>
           <tr>
-            <th style="width:76px;">Bao bì chứa thuốc</th>
-            <th style="width:82px;">Dịch truyền pha 1 ĐVT thuốc (*)</th>
-            <th style="width:96px;">Nồng độ thuốc GN-HT-TC không sử dụng hết</th>
-            <th style="width:65px;">Tổng thể tích cần hủy (ml)</th>
-            <th style="width:70px;">Tỷ lệ thuốc còn lại trên đơn vị tính (**)</th>
-            <th style="width:70px;">Điều dưỡng thực hiện y lệnh cuối<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
-            <th style="width:70px;">Bác sĩ điều trị<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
+            <th class="gn-ht-tc" style="width:76px;">Bao bì chứa thuốc</th>
+            <th class="gn-ht-tc" style="width:82px;">Dịch truyền pha 1 ĐVT thuốc (*)</th>
+            <th class="gn-ht-tc" style="width:96px;">Nồng độ thuốc GN-HT-TC không sử dụng hết</th>
+            <th class="gn-ht-tc" style="width:65px;">Thể tích cần hủy (ml)</th>
+            <th class="gn-ht-tc" style="width:70px;">Tỷ lệ thuốc còn lại trên đơn vị tính (**)</th>
+            <th class="gn-ht-tc" style="width:70px;">Điều dưỡng thực hiện y lệnh cuối<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
+            <th class="gn-ht-tc" style="width:70px;">Bác sĩ điều trị<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -598,7 +613,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <input type="text" id="signDd" class="sign-inp" placeholder="Họ và tên" oninput="this.classList.toggle('hv',!!this.value)">
         </div>
         <div class="sgn">
-          <p class="sdt">Hà Nội, ngày <span class="static-date" id="curDay"></span> tháng <span class="static-date" id="curMonth"></span> năm <span class="static-date" id="curYear"></span></p>
+          <p class="sdt">Hà Nội, ngày <span id="curDay" class="static-date"></span> tháng <span id="curMonth" class="static-date"></span> năm <span id="curYear" class="static-date"></span></p>
           <p class="role">Lãnh đạo khoa/Trung tâm</p>
           <p class="hint">(Ký, ghi rõ họ tên)</p>
           <div style="height:62px;"></div>
@@ -634,7 +649,12 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <p style="margin:4px 0;">- Với thuốc GN-HT-TC không sử dụng hết: Đổ dư phẩm thuốc vào xô nước để hòa loãng rồi đổ vào đường nước thải chung</p>
         </div>
         <div class="method-r">
-          <p class="bold" style="margin-top:-2.4em;margin-bottom:5px;">Thành phần tham gia:</p>
+          <p class="bold" style="margin-top:-2.4em;margin-bottom:5px;">Thành phần tham gia:
+            <button id="btnSkipTV" data-skip="off" onclick="toggleSkipTV(this)"
+              style="margin-left:8px;font-size:9.5px;padding:2px 7px;border:1px solid #27ae60;border-radius:3px;background:#27ae60;color:#fff;cursor:pointer;vertical-align:middle;">
+              Điền tự động
+            </button>
+          </p>
           <div class="nl"><span class="idx">1.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
           <div class="nl"><span class="idx">2.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
           <div class="nl"><span class="idx">3.</span><input class="tv" oninput="this.classList.toggle('hv',!!this.value)"><span class="pre">Thành viên Hội đồng hủy thuốc</span></div>
@@ -655,16 +675,16 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       <div class="sign-row2" style="margin-top:36px;">
         <div class="sb2"><p class="role">THÀNH VIÊN THAM GIA HỦY</p>
           <div class="sign-names-row">
-            <div class="sign-nc" id="snc4"><div style="height:80px;"></div></div>
-            <div class="sign-nc" id="snc5"><div style="height:80px;"></div></div>
-            <div class="sign-nc" id="snc6"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc4"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
+            <div class="sign-nc" id="snc5"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
+            <div class="sign-nc" id="snc6"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
           </div>
         </div>
         <div class="sb2"><p class="role">HỘI ĐỒNG HỦY THUỐC</p>
           <div class="sign-names-row">
-            <div class="sign-nc" id="snc1"><div style="height:80px;"></div></div>
-            <div class="sign-nc" id="snc2"><div style="height:80px;"></div></div>
-            <div class="sign-nc" id="snc3"><div style="height:80px;"></div></div>
+            <div class="sign-nc" id="snc1"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
+            <div class="sign-nc" id="snc2"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
+            <div class="sign-nc" id="snc3"><div style="height:80px;"></div><input type="text" class="snc-inp" placeholder="" oninput="this.classList.toggle('hv',!!this.value)"></div>
           </div>
         </div>
       </div>
@@ -789,18 +809,6 @@ window.addEventListener('hashchange',checkRoute);
 (function(){const el=document.getElementById('formLink');if(el)el.textContent=location.origin+location.pathname+'#form';})();
 
 /* ── DATE ── */
-(function setDate(){
-  const n=new Date();
-  const d=n.getDate(), m=n.getMonth()+1, y=n.getFullYear();
-  document.getElementById('curDay').textContent=d;
-  document.getElementById('curMonth').textContent=m;
-  document.getElementById('curYear').textContent=y;
-  // Also fill the invisible spacer spans (no id) inside the hidden sdt row
-  document.querySelectorAll('.sdt[aria-hidden] .static-date').forEach((s,i)=>{
-    s.textContent=[d,m,y][i]??'';
-  });
-})();
-
 /* ── PAGE NUMBERS ── */
 function upPnums(){const pp=document.querySelectorAll('.form-wrap .page');pp.forEach((p,i)=>{const a=p.querySelector('.pnum'),b=p.querySelector('.ptotal');if(a)a.textContent=i+1;if(b)b.textContent=pp.length;});}
 upPnums();
@@ -1023,13 +1031,13 @@ function addRow(){
     <td><div class="ss" data-f="sl"><input type="text" class="ss-inp" autocomplete="off" spellcheck="false" disabled><div class="ss-list"></div></div><span class="psr"></span></td>
     <td><div class="ss" data-f="dvt"><input type="text" class="ss-inp" autocomplete="off" spellcheck="false" disabled><div class="ss-list"></div></div><span class="psr"></span></td>
     <td><div class="numwrap" style="position:relative;"><input type="text" class="bb-qty" inputmode="numeric" placeholder="0" oninput="this.classList.toggle('hv',!!this.value)"><span class="iw"></span></div></td>
-    <td><div class="selwrap"><select class="bbdp"><option value=""></option><option value="Ống">Ống</option><option value="Lọ">Lọ</option><option value="Bơm tiêm">Bơm tiêm</option><option value="Chai">Chai</option><option value="Túi">Túi</option></select></div><span class="psr"></span></td>
-    <td><div class="selwrap"><select class="dtp" onchange="this.classList.toggle('hv',!!this.value)">${makeOpts(['DW','NS','G5'])}</select></div><span class="psr"></span></td>
-    <td><div class="ndc"><input type="text" class="nv" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><div class="selwrap"><select class="nu" onchange="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));">${makeOpts(['mg/ml','mcg/ml'])}</select></div><span class="psr"></span><span class="iw"></span></div></td>
-    <td><div class="numwrap"><input type="text" class="vol-input" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><span class="iw"></span></div></td>
-    <td><input type="text" class="tyle-result" readonly tabindex="-1" title="Tự động tính: Nồng độ × Thể tích / Hàm lượng trong ĐVT"></td>
-    <td class="wrap-cell dd-cell"><input type="text" class="dd-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
-    <td class="wrap-cell bs-cell"><input type="text" class="bs-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
+    <td class="gn-ht-tc"><div class="selwrap"><select class="bbdp"><option value=""></option><option value="Ống">Ống</option><option value="Lọ">Lọ</option><option value="Bơm tiêm">Bơm tiêm</option><option value="Chai">Chai</option><option value="Túi">Túi</option></select></div><span class="psr"></span></td>
+    <td class="gn-ht-tc"><div class="selwrap"><select class="dtp" onchange="this.classList.toggle('hv',!!this.value)">${makeOpts(['DW','NS','G5'])}</select></div><span class="psr"></span></td>
+    <td class="gn-ht-tc"><div class="ndc"><input type="text" class="nv" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><div class="selwrap"><select class="nu" onchange="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));">${makeOpts(['mg/ml','mcg/ml'])}</select></div><span class="psr"></span><span class="iw"></span></div></td>
+    <td class="gn-ht-tc"><div class="numwrap"><input type="text" class="vol-input" inputmode="decimal" placeholder="0,0" oninput="this.classList.toggle('hv',!!this.value);computeTyLe(this.closest('tr'));"><span class="iw"></span></div></td>
+    <td class="gn-ht-tc"><input type="text" class="tyle-result" readonly tabindex="-1" title="Tự động tính: Nồng độ × Thể tích / Hàm lượng trong ĐVT"></td>
+    <td class="wrap-cell dd-cell gn-ht-tc"><input type="text" class="dd-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
+    <td class="wrap-cell bs-cell gn-ht-tc"><input type="text" class="bs-inp" oninput="this.classList.toggle('hv',!!this.value);this.nextElementSibling.textContent=this.value;" style="white-space:normal;word-break:break-word;"><div class="wrap-pv"></div></td>
     <td class="wrap-cell ds-cell"><input type="text" class="ds-inp" readonly tabindex="-1" style="cursor:default;background:transparent;white-space:normal;word-break:break-word;" title="Điền vào block Dược sĩ xác nhận bên dưới"><div class="wrap-pv"></div></td>
     <td class="thuc-huy-cell"><input type="text" class="thuc-huy-inp" readonly tabindex="-1" style="cursor:default;background:transparent;text-align:center;font-size:11px;" title="Điền tay trên bản in"></td>
     <td class="row-act" style="white-space:nowrap;">
@@ -1232,9 +1240,9 @@ function prepPrint(){
   const active=SCREENS.find(s=>document.getElementById(s).classList.contains('active'));
   if(active==='s-form'){
     const khoa=document.getElementById('khoaInput')?.value?.trim()||'';
-    const d=document.getElementById('curDay')?.textContent||'';
-    const m=document.getElementById('curMonth')?.textContent||'';
-    const y=document.getElementById('curYear')?.textContent||'';
+    const d=document.getElementById('curDay')?.value||'';
+    const m=document.getElementById('curMonth')?.value||'';
+    const y=document.getElementById('curYear')?.value||'';
     document.title=`BB hủy dư phẩm${khoa?' - '+khoa:''} - ${d}-${m}-${y}`;
   }
 }
@@ -1245,52 +1253,54 @@ function afterPrint(){
 
 /* ── SAVE FORM ── */
 async function saveForm(){
+  // ── Vô hiệu hoá nút NGAY LẬP TỨC — tránh lưu đúp khi click nhiều lần ──
+  const bs=document.getElementById('btnSave');
+  bs.textContent='⏳ Đang lưu…';bs.disabled=true;
+
+  // ── Validation ──
   const rows=document.querySelectorAll('#tbody tr:not(.note-row)');
   const khoa=document.getElementById('khoaInput')?.value?.trim()||'';
-  // ── Validation
-  if(!khoa){
-    alert('⚠️ Chưa điền tên Khoa/Trung tâm.\nVui lòng nhập tên khoa trước khi lưu.');
-    document.getElementById('khoaInput').focus();
-    return;
-  }
-  if(!rows.length){
-    alert('⚠️ Chưa có dòng thuốc nào.\nVui lòng thêm ít nhất một dòng thuốc trước khi lưu.');
-    return;
-  }
-  // Check all rows have TXTT quantity (integer, non-empty)
+  const fail=msg=>{bs.textContent='💾 Lưu biên bản';bs.disabled=false;alert(msg);};
+  if(!khoa){fail('⚠️ Chưa điền tên Khoa/Trung tâm.\nVui lòng nhập tên khoa trước khi lưu.');document.getElementById('khoaInput').focus();return;}
+  if(!rows.length){fail('⚠️ Chưa có dòng thuốc nào.\nVui lòng thêm ít nhất một dòng thuốc trước khi lưu.');return;}
   const missingQty=[...rows].filter(tr=>!tr.querySelector('.bb-qty')?.value?.trim());
-  if(missingQty.length){
-    alert(`⚠️ Còn ${missingQty.length} dòng chưa nhập "Số lượng bao bì TXTT cần hủy".\nVui lòng nhập giá trị số nguyên trước khi lưu.`);
-    return;
-  }
-  // Điều dưỡng and Bác sĩ are optional
+  if(missingQty.length){fail(`⚠️ Còn ${missingQty.length} dòng chưa nhập "Số lượng bao bì của nhà cung cấp".`);return;}
   const su=localStorage.getItem('scriptUrl');
-  if(!su){alert('Chưa cấu hình URL Apps Script (vào Trang chủ → Cấu hình lưu biên bản).');return;}
-  const ngay=`${document.getElementById('curDay').textContent}/${document.getElementById('curMonth').textContent}/${document.getElementById('curYear').textContent}`;
-  // Auto-fill members from schedule database before save
-  const saveDateISO=new Date().toISOString().split('T')[0];
+  if(!su){fail('Chưa cấu hình URL Apps Script (vào Trang chủ → Cấu hình lưu biên bản).');return;}
+  // Điều dưỡng and Bác sĩ are optional
+
+  // ── Ngày/giờ lưu cố định tại thời điểm này ──
+  const SD=new Date();
+  const sDay=SD.getDate(),sMon=SD.getMonth()+1,sYr=SD.getFullYear();
+  const ngay=`${sDay}/${sMon}/${sYr}`;
+  const now=SD.toLocaleString('vi-VN');
+  const khoaCode=(DEPT_CODES[khoa]||'00').padStart(2,'0');
+  const pfx=String(sYr).slice(-1)+String(sMon).padStart(2,'0')+String(sDay).padStart(2,'0')+khoaCode;
+
+  // ── Khởi động GET barcode NGAY (chạy song song trong khi CPU xây dựng data) ──
+  const barcodePromise=fetch(su+'?action=reserve&khoaCode='+encodeURIComponent(khoaCode))
+    .then(r=>r.ok?r.json():{}).catch(()=>({}));
+
+  // ── Lịch trực: sau 16:30 → lấy ngày hôm sau ──
+  const isAfter1630=SD.getHours()>16||(SD.getHours()===16&&SD.getMinutes()>=30);
+  const scheduleDate=new Date(SD);
+  if(isAfter1630)scheduleDate.setDate(scheduleDate.getDate()+1);
+  const saveDateISO=`${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth()+1).padStart(2,'0')}-${String(scheduleDate.getDate()).padStart(2,'0')}`;
   autoFillMembers(saveDateISO,khoa);
 
-  // Build barcode code before fetch so it can be included in the sheet data
-  const barcodeCode=buildBarcodeCode(khoa);
-  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì TXTT cần hủy','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
-  const now=new Date().toLocaleString('vi-VN');
+  // ── Xây dựng data rows (trong khi GET đang chạy) ──
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì của nhà cung cấp','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Tổng thể tích dư phẩm (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
   const dr=[];
   rows.forEach((tr,i)=>{
     const tds=[...tr.querySelectorAll('td')];
     const txt=td=>td?.querySelector('input[type=text]:not(.ss-inp):not(.nv),select')?.value?.trim()||td?.textContent?.trim()||'';
-    dr.push([barcodeCode,now,ngay,khoa,i+1,
+    dr.push(['',now,ngay,khoa,i+1,
       tr._ss?.tt?.value||'',tr._ss?.hc?.value||'',tr._ss?.nd?.value||'',tr._ss?.sl?.value||'',tr._ss?.dvt?.value||'',
-      // bb-qty: integer → send as number
       (()=>{const v=txt(tds[6]);const n=parseInt(v,10);return isNaN(n)?v:n;})(),
-      tr.querySelector('.bbdp')?.value||'',
-      tr.querySelector('.dtp')?.value||'',
-      // nv: convert "0,3" → 0.3 so Sheets doesn't store as text
+      tr.querySelector('.bbdp')?.value||'',tr.querySelector('.dtp')?.value||'',
       (()=>{const v=tr.querySelector('.nv')?.value?.trim()||'';if(!v)return'';const n=parseFloat(v.replace(',','.'));return isNaN(n)?v:n;})(),
       tr.querySelector('.nu')?.value?.trim()||'',
-      // vol (thể tích): convert "1,5" → 1.5
       (()=>{const v=txt(tds[10]);if(!v)return'';const n=parseFloat(v.replace(',','.'));return isNaN(n)?v:n;})(),
-      // tỷ lệ: convert "0,3000" (vi-VN locale) → number 0.3 so Google Sheets doesn't misread comma as thousands separator
       (()=>{const v=tds[11]?.querySelector('.tyle-result')?.value?.trim()||'';if(!v)return'';const n=parseFloat(v.replace(/\./g,'').replace(',','.'));return isNaN(n)?v:n;})(),
       tr.querySelector('.dd-inp')?.value?.trim()||'',tr.querySelector('.bs-inp')?.value?.trim()||'',
       tr._noteRow?.querySelector('.note-input')?.value?.trim()||'',
@@ -1302,8 +1312,23 @@ async function saveForm(){
       i===0?document.getElementById('gioKT')?.value||'':'',
       i===0?document.getElementById('phutKT')?.value||'':'']);
   });
-  const bs=document.getElementById('btnSave');
-  bs.textContent='⏳ Đang lưu…';bs.disabled=true;
+
+  // ── Đợi barcode từ server (thường đã xong rồi vì chạy song song) ──
+  let barcodeCode=pfx+getBarcodeCounter(); // local fallback
+  try{
+    const reserveResult=await barcodePromise;
+    if(reserveResult.status==='ok'&&reserveResult.barcode) barcodeCode=reserveResult.barcode;
+  }catch(_){}
+  dr.forEach(r=>{r[0]=barcodeCode;});
+
+  // ── Cập nhật span ngày hiển thị ──
+  ['curDay','curMonth','curYear'].forEach((id,j)=>{
+    const el=document.getElementById(id);if(el)el.textContent=[sDay,sMon,sYr][j];
+  });
+  document.querySelectorAll('.sdt[aria-hidden] .static-date').forEach((s,j)=>{
+    s.textContent=[sDay,sMon,sYr][j]??'';
+  });
+
   try{
     await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify([HEADER,...dr])});
     document.getElementById('savedTime').textContent=new Date().toLocaleTimeString('vi-VN');
@@ -1314,7 +1339,6 @@ async function saveForm(){
     document.getElementById('formWrap').classList.add('form-locked');
     document.querySelectorAll('.note-input').forEach(i=>i.disabled=true);
     document.querySelectorAll('.add-bar button').forEach(b=>b.disabled=true);
-    // Generate barcode
     generateBarcodes(barcodeCode);
   }catch(e){
     bs.textContent='💾 Lưu biên bản';bs.disabled=false;
@@ -1323,19 +1347,23 @@ async function saveForm(){
 }
 /* ── BARCODE ── */
 function getBarcodeCounter(){
+  // LOCAL fallback only — used when Apps Script doesn't return a barcode
   const n=new Date();
   const today=`${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}`;
-  // Single atomic key — global across all khoa, resets only on date change
   let state;
   try{state=JSON.parse(localStorage.getItem('bcState')||'{}');}catch{state={};}
   let count;
-  if(state.date===today){
-    count=(parseInt(state.count)||0)+1;
-  } else {
-    count=1; // new day → reset to 1
-  }
+  if(state.date===today){count=(parseInt(state.count)||0)+1;}else{count=1;}
   localStorage.setItem('bcState',JSON.stringify({date:today,count}));
   return String(count).padStart(3,'0');
+}
+function buildBarcodePrefix(khoa){
+  const n=new Date();
+  const y=String(n.getFullYear()).slice(-1);
+  const m=String(n.getMonth()+1).padStart(2,'0');
+  const d=String(n.getDate()).padStart(2,'0');
+  const dc=(DEPT_CODES[khoa]||'00').padStart(2,'0');
+  return `${y}${m}${d}${dc}`;
 }
 function buildBarcodeCode(khoa){
   const n=new Date();
@@ -1395,8 +1423,10 @@ function resetForm(){
   document.getElementById('btnNew').classList.remove('show');
   document.querySelectorAll('.add-bar button').forEach(b=>b.disabled=false);
   const n=new Date();const d=n.getDate(),m=n.getMonth()+1,y=n.getFullYear();
-  document.getElementById('curDay').textContent=d;document.getElementById('curMonth').textContent=m;document.getElementById('curYear').textContent=y;
+  document.getElementById('curDay').value=d;document.getElementById('curMonth').value=m;document.getElementById('curYear').value=y;
   document.querySelectorAll('.sdt[aria-hidden] .static-date').forEach((s,i)=>{s.textContent=[d,m,y][i]??'';});
+  const skipBtn=document.getElementById('btnSkipTV');
+  if(skipBtn){skipBtn.dataset.skip='off';skipBtn.textContent='Điền tự động';skipBtn.style.background='#27ae60';skipBtn.style.color='#fff';skipBtn.style.borderColor='#27ae60';}
   clearBarcodes();
   addRow();addRow();addRow();
   silentRefreshAll();
@@ -1580,6 +1610,7 @@ async function loadScheduleSheet(silent){
     SCHEDULE_DATA=rows.slice(1).filter(r=>r.some(c=>c)).map(r=>({
       stt:(r[0]||'').trim(),ten:(r[1]||'').trim(),khoa:(r[2]||'').trim(),coSo:(r[3]||'').trim(),ngay:(r[4]||'').trim()
     }));
+    updateTvPreviews(); // update TV placeholders after schedule syncs
   }catch(e){if(!silent)console.error('loadScheduleSheet:',e);}
 }
 function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
@@ -1606,20 +1637,58 @@ function findMemberForPos(pos, targetDate, cosoN){
   return past.length?past[0]:null;
 }
 
+/* ── TV INPUT HELPERS + SKIP TOGGLE ── */
+function getTvByPos(pos){
+  for(const nl of document.querySelectorAll('.method-r .nl')){
+    const idx=nl.querySelector('.idx');
+    if(idx&&parseInt(idx.textContent)===pos)return nl.querySelector('.tv');
+  }
+  return null;
+}
+function toggleSkipTV(btn){
+  const turningOn=btn.dataset.skip==='off';
+  btn.dataset.skip=turningOn?'on':'off';
+  btn.textContent=turningOn?'Bỏ trống':'Điền tự động';
+  btn.style.background=turningOn?'#e74c3c':'#27ae60';
+  btn.style.color='#fff';
+  btn.style.borderColor=turningOn?'#c0392b':'#27ae60';
+  updateTvPreviews();
+}
+function updateTvPreviews(){
+  const skip=document.getElementById('btnSkipTV')?.dataset?.skip==='on';
+  if(skip){
+    [1,2,3,4,5,6].forEach(p=>{
+      const tvInp=getTvByPos(p);if(tvInp)tvInp.placeholder='';
+      const sncInp=document.querySelector(`#snc${p} .snc-inp`);if(sncInp)sncInp.placeholder='';
+    });
+    return;
+  }
+  if(!SCHEDULE_DATA.length)return;
+  const now=new Date();
+  const isAfter1630=now.getHours()>16||(now.getHours()===16&&now.getMinutes()>=30);
+  const ld=new Date(now);if(isAfter1630)ld.setDate(ld.getDate()+1);
+  const khoa=document.getElementById('khoaInput')?.value?.trim()||'';
+  const cosoN=(DEPT_COSO[khoa]||'').trim().toLowerCase();
+  [1,2,3,4].forEach(pos=>{
+    const m=findMemberForPos(pos,ld,cosoN);
+    const ph=m&&m.ten?`VD: ${m.ten}`:'';
+    const tvInp=getTvByPos(pos);if(tvInp)tvInp.placeholder=ph;
+    const sncInp=document.querySelector(`#snc${pos} .snc-inp`);if(sncInp)sncInp.placeholder=ph;
+  });
+}
 function autoFillMembers(saveDateStr,khoa){
+  const skip=document.getElementById('btnSkipTV')?.dataset?.skip==='on';
+  if(skip){
+    // Toggle ON: clear all TV inputs so names stay blank in PDF
+    [1,2,3,4,5,6].forEach(pos=>{
+      const inp=getTvByPos(pos);if(inp){inp.value='';inp.classList.remove('hv');}
+      const sncInp=document.querySelector(`#snc${pos} .snc-inp`);if(sncInp){sncInp.value='';sncInp.classList.remove('hv');}
+    });
+    updateSignBlocks([]);return;
+  }
   if(!SCHEDULE_DATA.length)return;
   const targetDate=new Date(saveDateStr);if(isNaN(targetDate))return;
   const cosoN=(DEPT_COSO[khoa]||'').trim().toLowerCase();
-
-  // Find TV input by .idx span value — robust, not array-index dependent
-  function getTvByPos(pos){
-    for(const nl of document.querySelectorAll('.method-r .nl')){
-      const idx=nl.querySelector('.idx');
-      if(idx&&parseInt(idx.textContent)===pos)return nl.querySelector('.tv');
-    }
-    return null;
-  }
-
   const allMembers=[];
   [1,2,3,4].forEach(pos=>{
     const m=findMemberForPos(pos,targetDate,cosoN);
@@ -1634,19 +1703,12 @@ function autoFillMembers(saveDateStr,khoa){
   updateSignBlocks(allMembers);
 }
 function updateSignBlocks(members){
-  [1,2,3].forEach(pos=>{
-    const el=document.getElementById(`snc${pos}`);if(!el)return;
+  [1,2,3,4,5,6].forEach(pos=>{
+    const inp=document.querySelector(`#snc${pos} .snc-inp`);if(!inp)return;
+    if(!members.length){inp.value='';inp.classList.remove('hv');return;} // skip ON → clear
     const m=members.find(r=>parseInt(r.stt)===pos);
-    el.innerHTML=m&&m.ten
-      ?`<div style="height:80px;"></div><div class="snname">${m.ten}</div>`
-      :`<div style="height:80px;"></div>`;
-  });
-  [4,5,6].forEach(pos=>{
-    const el=document.getElementById(`snc${pos}`);if(!el)return;
-    const m=pos<=4?members.find(r=>parseInt(r.stt)===pos):null;
-    el.innerHTML=m&&m.ten
-      ?`<div style="height:80px;"></div><div class="snname">${m.ten}</div>`
-      :`<div style="height:80px;"></div>`;
+    if(m&&m.ten){inp.value=m.ten;inp.classList.add('hv');}
+    // positions without a match: keep manual entry intact
   });
 }
 
