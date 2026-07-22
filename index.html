@@ -131,7 +131,10 @@ td input:focus{outline:1px solid var(--ac);background:#eef5fc;}
 .barcode-area .bc-svg{display:block;}
 .barcode-area .msbb{font-family:"Courier New",Courier,monospace;font-size:7px;letter-spacing:0;margin-top:1px;white-space:nowrap;}
 .page{position:relative;}
-/* Partial underline: gạch chân 2/3 giữa */
+/* Editable date inputs on page 1 */
+.date-inp{border:none;border-bottom:1px dotted var(--hi);background:transparent;font-family:inherit;font-size:inherit;font-style:italic;text-align:center;padding:0;width:auto;-moz-appearance:textfield;}
+.date-inp::-webkit-outer-spin-button,.date-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+#curDay,#curMonth{width:28px;}#curYear{width:46px;}
 .mid-ul{display:inline-block;position:relative;text-decoration:none;}
 .mid-ul::after{content:'';position:absolute;bottom:-1px;left:16.5%;width:67%;border-bottom:1px solid currentColor;}
 /* GN-HT-TC group cells AND headers: hồng nhạt trên màn hình */
@@ -225,6 +228,42 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .dept-add input{flex:1;padding:8px 11px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;}
 .dept-add input:focus{outline:none;border-color:var(--ac);}
 .dept-empty{color:#aaa;font-size:12px;font-family:Arial,sans-serif;text-align:center;padding:16px 0;font-style:italic;}
+/* ── QUẢN LÝ BIÊN BẢN THUỐC (thuoc mgmt) ── */
+.thuoc-login{max-width:420px;margin:30px auto;}
+.thuoc-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.thuoc-tab{flex:1;text-align:center;padding:9px 0;border:1.5px solid #d0d5dd;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:#666;background:#fff;font-family:Arial,sans-serif;}
+.thuoc-tab.active{background:var(--ac);color:#fff;border-color:var(--ac);}
+.thuoc-field{margin-bottom:12px;display:flex;flex-direction:column;gap:5px;}
+.thuoc-field label{font-size:12px;color:#555;font-weight:600;font-family:Arial,sans-serif;}
+.thuoc-field input{padding:9px 11px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;}
+.thuoc-field input:focus{outline:none;border-color:var(--ac);}
+.thuoc-err{color:var(--re);font-size:12px;margin-top:10px;display:none;font-family:Arial,sans-serif;text-align:center;}
+.thuoc-hdr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;font-family:Arial,sans-serif;}
+.thuoc-hdr .who{font-size:15px;font-weight:700;color:var(--ac);}
+.thuoc-hdr .role-tag{font-size:11px;background:#e8eef6;color:var(--acd);padding:3px 9px;border-radius:12px;font-weight:600;}
+.thuoc-datebox{font-size:12.5px;font-weight:700;color:#444;background:#eef2f7;padding:7px 12px;border-radius:6px;margin:16px 0 8px;font-family:Arial,sans-serif;}
+.bb-item{background:#fff;border:1px solid #e0e4ea;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-family:Arial,sans-serif;}
+.bb-item .msbb{font-family:"Courier New",Courier,monospace;font-weight:700;color:var(--ac);font-size:12.5px;}
+.bb-item .meta{font-size:12px;color:#666;}
+.bb-item .grow{flex:1;min-width:120px;}
+.status-tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;white-space:nowrap;font-family:Arial,sans-serif;}
+.status-tag.none{background:#f0f2f5;color:#888;}
+.status-tag.pending{background:#fef9e7;color:#8a6500;}
+.status-tag.approved{background:#fdecea;color:var(--re);}
+.status-tag.rejected{background:#e6f9f0;color:var(--gr);}
+.thuoc-empty{text-align:center;color:#999;font-style:italic;padding:30px 0;font-size:13px;font-family:Arial,sans-serif;}
+.req-item{background:#fff;border:1px solid #e0e4ea;border-radius:8px;padding:14px 16px;margin-bottom:10px;font-family:Arial,sans-serif;}
+.req-item .row1{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;align-items:center;font-size:13px;}
+.req-item .lydo{font-size:12.5px;background:#f8fafc;border-left:3px solid var(--or);padding:8px 10px;border-radius:4px;margin:8px 0;line-height:1.5;}
+.req-item .acts{display:flex;gap:8px;margin-top:8px;}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{background:#fff;border-radius:10px;padding:22px 26px;width:400px;max-width:92vw;font-family:Arial,sans-serif;}
+.modal-box h3{font-size:14px;color:var(--ac);margin-bottom:12px;}
+.modal-box textarea{width:100%;border:1.5px solid #d0d5dd;border-radius:7px;padding:9px 11px;font-size:13px;font-family:Arial,sans-serif;resize:vertical;min-height:80px;}
+.modal-box textarea:focus{outline:none;border-color:var(--ac);}
+.modal-box .macts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+
 /* Khoa searchable input in form */
 .khoa-ss-wrap{position:relative;display:inline-block;}
 .khoa-ss-wrap .ss-list{position:fixed;z-index:9999;background:#fff;border:1px solid #aaa;box-shadow:0 4px 12px rgba(0,0,0,.18);max-height:180px;overflow-y:auto;display:none;font-family:Arial,sans-serif;font-size:12px;text-align:left;border-radius:4px;}
@@ -243,7 +282,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-form] .thuc-huy-inp{border-bottom:none!important;}
   body[data-ps=s-form] .thuc-huy-cell{vertical-align:middle;}
   body[data-ps=s-form] .sign-nc .snc-inp{border-bottom:none!important;}
-  body[data-ps=s-form] .gn-ht-tc{background:transparent!important;}
+  body[data-ps=s-form] .date-inp{border-bottom:none!important;}
+  body[data-ps=s-form] #btnSkipTV{display:none!important;}
   body[data-ps=s-form] .form-wrap{background:#fff;padding:0;min-height:unset;}
   body[data-ps=s-form] .page{box-shadow:none;margin:0;padding:6mm 10mm 4mm;width:auto;min-height:190mm;page-break-after:always;}
   body[data-ps=s-form] input::placeholder{color:transparent!important;}
@@ -334,6 +374,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
         <h3>Theo dõi cấp phát</h3>
         <p>Tạo báo cáo theo dõi cấp phát, thu hồi dư phẩm và bao bì TXTT theo khoa, tháng</p>
       </div>
+      <div class="tile" onclick="go('s-thuoc')">
+        <div class="icon">💊</div>
+        <h3>Quản lý biên bản thuốc</h3>
+        <p>Khoa/phòng đăng nhập xem biên bản của khoa mình, đề xuất hủy; Hội đồng thuốc xét duyệt</p>
+      </div>
     </div><!-- /tiles -->
     <p class="form-hint">Link dành cho khoa/phòng (chỉ nhập liệu): <code id="formLink"></code></p>
     <button class="open-btn" onclick="go('s-form')" style="margin-top:12px;">
@@ -371,6 +416,177 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       <p style="font-size:11px;color:#999;margin-top:12px;font-family:Arial,sans-serif;">
         💡 Dữ liệu lưu trong trình duyệt (localStorage). Để dùng trên nhiều thiết bị: duy trì một Google Sheet danh sách khoa và mỗi thiết bị "Tải từ Sheet" một lần.
       </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ S-THUOC (Quản lý biên bản thuốc) ══════════ -->
+<div class="scr" id="s-thuoc">
+  <div class="adm-hdr"><div class="hosp">Bệnh viện Nhi Trung ương</div><h1>Hệ thống biên bản hủy bao bì TXTT</h1></div>
+  <div class="back-bar">
+    <button class="back-btn" onclick="go('s-home')">← Trang chủ</button>
+    <span class="pg-title">💊 Quản lý biên bản thuốc</span>
+    <button class="btn btn-gh" id="thuocLogoutBtn" style="margin-left:auto;display:none;" onclick="thuocLogout()">🚪 Đăng xuất</button>
+  </div>
+  <div class="adm-body" style="max-width:900px;">
+
+    <!-- LOGIN VIEW -->
+    <div id="thuocLoginView">
+      <div class="acard thuoc-login">
+        <h2 style="justify-content:center;">🔐 Đăng nhập</h2>
+        <div class="thuoc-tabs">
+          <div class="thuoc-tab active" id="tabKhoa" onclick="thuocSwitchTab('khoa')">🏥 Khoa/Trung tâm</div>
+          <div class="thuoc-tab" id="tabCouncil" onclick="thuocSwitchTab('council')">⚖️ Hội đồng thuốc</div>
+        </div>
+
+        <div id="loginKhoaBox">
+          <div class="thuoc-field">
+            <label>Khoa/Trung tâm</label>
+            <div class="khoa-ss-wrap" style="display:block;">
+              <input type="text" id="thuocKhoaInput" class="khoa-input" autocomplete="off" spellcheck="false"
+                placeholder="Chọn khoa/trung tâm…" style="width:100%;padding:9px 11px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;"
+                oninput="thuocKhoaSSFilter(this.value)" onfocus="thuocKhoaSSOpen()" onblur="setTimeout(thuocKhoaSSClose,160)">
+              <div class="ss-list" id="thuocKhoaSSList"></div>
+            </div>
+          </div>
+          <div class="thuoc-field">
+            <label>Mật khẩu</label>
+            <input type="password" id="thuocKhoaPass" placeholder="Nhập mật khẩu khoa" onkeydown="if(event.key==='Enter')thuocLoginKhoa()">
+          </div>
+          <button class="btn btn-p" style="width:100%;justify-content:center;" onclick="thuocLoginKhoa()">Đăng nhập</button>
+        </div>
+
+        <div id="loginCouncilBox" style="display:none;">
+          <div class="thuoc-field">
+            <label>Mật khẩu Hội đồng thuốc</label>
+            <input type="password" id="thuocCouncilPass" placeholder="Nhập mật khẩu hội đồng" onkeydown="if(event.key==='Enter')thuocLoginCouncil()">
+          </div>
+          <button class="btn btn-p" style="width:100%;justify-content:center;" onclick="thuocLoginCouncil()">Đăng nhập</button>
+        </div>
+
+        <div class="thuoc-err" id="thuocLoginErr"></div>
+      </div>
+      <p style="text-align:center;font-size:11px;color:#999;font-family:Arial,sans-serif;">
+        💡 Mật khẩu khoa được thiết lập ở cột "Mật khẩu" trong Sheet danh sách khoa phòng.<br>Mật khẩu Hội đồng thuốc thiết lập qua khóa <code>council_pass</code> trong Sheet cấu hình trung tâm.
+      </p>
+    </div>
+
+    <!-- DASHBOARD KHOA VIEW -->
+    <div id="thuocKhoaView" style="display:none;">
+      <div class="thuoc-hdr">
+        <span class="who" id="thuocKhoaName"></span>
+        <span class="role-tag">Khoa/Trung tâm</span>
+      </div>
+      <div class="acard">
+        <h2>Bộ lọc</h2>
+        <div class="theo-filters">
+          <label>Từ ngày <input type="date" id="thuocFromDate" onchange="thuocRenderKhoaList()"></label>
+          <label>Đến ngày <input type="date" id="thuocToDate" onchange="thuocRenderKhoaList()"></label>
+          <div style="align-self:flex-end;"><button class="btn btn-gh" onclick="thuocRefreshKhoa()">🔄 Tải lại</button></div>
+        </div>
+      </div>
+      <div id="thuocKhoaList"></div>
+    </div>
+
+    <!-- DASHBOARD COUNCIL VIEW -->
+    <div id="thuocCouncilView" style="display:none;">
+      <div class="thuoc-hdr">
+        <span class="who">⚖️ Hội đồng thuốc</span>
+        <span class="role-tag">Xét duyệt đề xuất hủy biên bản</span>
+      </div>
+      <div class="acard">
+        <div class="rg">
+          <button class="btn btn-gh" onclick="thuocRefreshCouncil()">🔄 Tải lại</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-family:Arial,sans-serif;margin-left:8px;">
+            <input type="checkbox" id="thuocShowAllReq" onchange="thuocRenderCouncilList()"> Hiện cả đã xét duyệt
+          </label>
+        </div>
+      </div>
+      <div id="thuocCouncilList"></div>
+    </div>
+
+    <div class="acard" style="border:1px dashed #d0d5dd;background:#fafbfc;">
+      <h2>ℹ️ Yêu cầu cấu hình Apps Script</h2>
+      <div class="desc">
+        Tính năng này cần Apps Script (đã dùng để lưu biên bản) hỗ trợ thêm 3 hành động (action) qua GET, đọc/ghi vào một sheet tab tên <b>CancelRequests</b> gồm các cột: <code>id, msbb, khoa, ngayBienBan, lyDo, nguoiDeXuat, thoiGian, trangThai, nguoiDuyet, ghiChuDuyet, thoiGianDuyet</code>.
+      </div>
+      <button class="tgl" onclick="toggleHowto('thuocHowto')">▶ Xem code Apps Script cần bổ sung</button>
+      <div class="howto" id="thuocHowto">
+        <p>Thêm đoạn sau vào Apps Script hiện có (trong hàm <code>doGet(e)</code>, xử lý theo <code>e.parameter.action</code>):</p>
+        <pre>function doGet(e) {
+  var action = e.parameter.action;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('CancelRequests') || ss.insertSheet('CancelRequests');
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['id','msbb','khoa','ngayBienBan','lyDo','nguoiDeXuat','thoiGian','trangThai','nguoiDuyet','ghiChuDuyet','thoiGianDuyet']);
+  }
+
+  if (action === 'listCancelRequests') {
+    var rows = sh.getDataRange().getValues().slice(1);
+    var items = rows.filter(r => r[0]).map(r => ({
+      id:r[0], msbb:r[1], khoa:r[2], ngayBienBan:r[3], lyDo:r[4],
+      nguoiDeXuat:r[5], thoiGian:r[6], trangThai:r[7],
+      nguoiDuyet:r[8], ghiChuDuyet:r[9], thoiGianDuyet:r[10]
+    }));
+    return ContentService.createTextOutput(JSON.stringify({status:'ok', items:items}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === 'submitCancelRequest') {
+    var id = 'REQ' + new Date().getTime();
+    sh.appendRow([id, e.parameter.msbb, e.parameter.khoa, e.parameter.ngayBienBan,
+      e.parameter.lyDo, e.parameter.nguoiDeXuat, new Date().toLocaleString('vi-VN'),
+      'pending', '', '', '']);
+    return ContentService.createTextOutput(JSON.stringify({status:'ok', id:id}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === 'decideCancelRequest') {
+    var data = sh.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === e.parameter.id) {
+        sh.getRange(i+1, 8).setValue(e.parameter.decision === 'approve' ? 'approved' : 'rejected');
+        sh.getRange(i+1, 9).setValue(e.parameter.nguoiDuyet || '');
+        sh.getRange(i+1, 10).setValue(e.parameter.ghiChu || '');
+        sh.getRange(i+1, 11).setValue(new Date().toLocaleString('vi-VN'));
+        break;
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ...giữ nguyên các action cũ (reserve, v.v.) bên dưới...
+}</pre>
+        <p>Sau khi dán, <b>Deploy lại</b> (Triển khai → Quản lý phiên bản triển khai → Tạo phiên bản mới) để URL hiện tại nhận code mới, không cần đổi <code>scriptUrl</code>.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal đề xuất hủy -->
+<div class="modal-ov" id="thuocCancelModal">
+  <div class="modal-box">
+    <h3>🗑️ Đề xuất hủy biên bản</h3>
+    <p style="font-size:12.5px;color:#666;margin-bottom:8px;">MSBB: <b id="cancelModalMsbb"></b></p>
+    <textarea id="cancelReasonInput" placeholder="Nhập lý do đề xuất hủy biên bản…"></textarea>
+    <div class="macts">
+      <button class="btn btn-gh" onclick="thuocCloseCancelModal()">Huỷ bỏ</button>
+      <button class="btn btn-or" onclick="thuocSubmitCancel()">Gửi đề xuất</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xét duyệt của hội đồng -->
+<div class="modal-ov" id="thuocDecideModal">
+  <div class="modal-box">
+    <h3 id="decideModalTitle">Xét duyệt đề xuất hủy</h3>
+    <p style="font-size:12.5px;color:#666;margin-bottom:8px;">MSBB: <b id="decideModalMsbb"></b></p>
+    <textarea id="decideNoteInput" placeholder="Ghi chú của hội đồng (không bắt buộc)…"></textarea>
+    <div class="macts">
+      <button class="btn btn-gh" onclick="thuocCloseDecideModal()">Đóng</button>
+      <button class="btn btn-g" id="decideConfirmBtn" onclick="thuocConfirmDecide()">Xác nhận</button>
     </div>
   </div>
 </div>
@@ -613,7 +829,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <input type="text" id="signDd" class="sign-inp" placeholder="Họ và tên" oninput="this.classList.toggle('hv',!!this.value)">
         </div>
         <div class="sgn">
-          <p class="sdt">Hà Nội, ngày <span id="curDay" class="static-date"></span> tháng <span id="curMonth" class="static-date"></span> năm <span id="curYear" class="static-date"></span></p>
+          <p class="sdt">Hà Nội, ngày <input type="number" id="curDay" class="date-inp" min="1" max="31" oninput="updateTvPreviews()"> tháng <input type="number" id="curMonth" class="date-inp" min="1" max="12" oninput="updateTvPreviews()"> năm <input type="number" id="curYear" class="date-inp" min="2020" max="2099" oninput="updateTvPreviews()"></p>
           <p class="role">Lãnh đạo khoa/Trung tâm</p>
           <p class="hint">(Ký, ghi rõ họ tên)</p>
           <div style="height:62px;"></div>
@@ -701,7 +917,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 
 /* ── ROUTER ── */
-const SCREENS=['s-home','s-drug','s-script','s-khoa','s-theo','s-form'];
+const SCREENS=['s-home','s-drug','s-script','s-khoa','s-theo','s-form','s-thuoc'];
 function go(id){
   SCREENS.forEach(s=>document.getElementById(s).classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -716,11 +932,13 @@ function go(id){
       if(id==='s-form'&&!document.querySelectorAll('#tbody tr:not(.note-row)').length){
         addRow();addRow();addRow();
       }
+      if(id==='s-form') setSyncDate();
     });
   }
   else if(id==='s-drug') { if(localStorage.getItem('sheetUrl')) connectSheet(true); }
   else if(id==='s-khoa') { if(localStorage.getItem('deptSheetUrl')) loadDeptsFromSheet(true); }
   else if(id==='s-theo') { if(localStorage.getItem('outSheetUrl')) loadOutSheet(true); }
+  else if(id==='s-thuoc') { silentRefreshAll().then(()=>thuocRenderSession()); thuocRenderSession(); }
 }
 
 /* Refresh all data connections (no config reload — avoids infinite loop) */
@@ -782,6 +1000,8 @@ async function applyConfig(silent){
       if(inp) inp.value=cfg.script_url;
       setSt('scriptStatus','ok','✅ Đã cấu hình từ Config Sheet');
     }
+    // Council password (Hội đồng thuốc) — not a URL, just a plain value
+    if(cfg.council_pass){ COUNCIL_PASS=cfg.council_pass; localStorage.setItem('councilPass', cfg.council_pass); }
     localStorage.setItem('configUrl', raw);
     if(!silent){
       document.getElementById('configUrl').value=raw;
@@ -802,6 +1022,7 @@ function checkRoute(){
   else if(h==='#script') go('s-script');
   else if(h==='#khoa') go('s-khoa');
   else if(h==='#theo-doi') go('s-theo');
+  else if(h==='#thuoc') go('s-thuoc');
   else go('s-home');
 }
 checkRoute();
@@ -810,6 +1031,22 @@ window.addEventListener('hashchange',checkRoute);
 
 /* ── DATE ── */
 /* ── PAGE NUMBERS ── */
+function setSyncDate(){
+  const n=new Date();
+  // Sau 16:30 → ngày mặc định chuyển sang ngày hôm sau
+  const isAfter1630=n.getHours()>16||(n.getHours()===16&&n.getMinutes()>=30);
+  if(isAfter1630)n.setDate(n.getDate()+1);
+  const d=n.getDate(),m=n.getMonth()+1,y=n.getFullYear();
+  const ed=document.getElementById('curDay');
+  const em=document.getElementById('curMonth');
+  const ey=document.getElementById('curYear');
+  if(ed)ed.value=d; if(em)em.value=m; if(ey)ey.value=y;
+  // Update invisible spacer spans for layout
+  document.querySelectorAll('.sdt[aria-hidden] .static-date').forEach((s,i)=>{
+    s.textContent=[d,m,y][i]??'';
+  });
+  updateTvPreviews();
+}
 function upPnums(){const pp=document.querySelectorAll('.form-wrap .page');pp.forEach((p,i)=>{const a=p.querySelector('.pnum'),b=p.querySelector('.ptotal');if(a)a.textContent=i+1;if(b)b.textContent=pp.length;});}
 upPnums();
 
@@ -897,6 +1134,14 @@ function parseDrugCsv(text){
 
 /* ── DRUG DB ── */
 let DRUG_DB=[];
+/* ── DANH SÁCH KHOA: khôi phục từ localStorage lúc tải trang (tránh lỗi biến chưa khởi tạo) ── */
+let DEPTS=[]; try{DEPTS=JSON.parse(localStorage.getItem('depts')||'[]');}catch{DEPTS=[];}
+let DEPT_CODES={}; try{DEPT_CODES=JSON.parse(localStorage.getItem('deptCodes')||'{}');}catch{DEPT_CODES={};}
+let DEPT_COSO={}; try{DEPT_COSO=JSON.parse(localStorage.getItem('deptCoSo')||'{}');}catch{DEPT_COSO={};}
+/* ── QUẢN LÝ BIÊN BẢN THUỐC: mật khẩu khoa / hội đồng, dữ liệu đề xuất hủy ── */
+let DEPT_PASS={}; try{DEPT_PASS=JSON.parse(localStorage.getItem('deptPass')||'{}');}catch{DEPT_PASS={};}
+let COUNCIL_PASS=localStorage.getItem('councilPass')||'';
+let REQ_DATA=[];
 // Pre-fill all URL inputs from localStorage (for display only; actual data loaded via silentRefreshAll)
 (function prefillInputs(){
   const map={sheetUrl:'sheetUrl',scriptUrl:'scriptUrl',outSheetUrl:'outSheetUrl',deptSheetUrl:'deptSheetUrl',configUrl:'configUrl'};
@@ -1269,23 +1514,24 @@ async function saveForm(){
   if(!su){fail('Chưa cấu hình URL Apps Script (vào Trang chủ → Cấu hình lưu biên bản).');return;}
   // Điều dưỡng and Bác sĩ are optional
 
-  // ── Ngày/giờ lưu cố định tại thời điểm này ──
+  // ── Ngày biên bản = giá trị người dùng điền ở trang 1 ──
+  // Ngày lưu thực tế vẫn dùng new Date() cho timestamp
   const SD=new Date();
-  const sDay=SD.getDate(),sMon=SD.getMonth()+1,sYr=SD.getFullYear();
-  const ngay=`${sDay}/${sMon}/${sYr}`;
   const now=SD.toLocaleString('vi-VN');
+  const sDay=parseInt(document.getElementById('curDay')?.value)||SD.getDate();
+  const sMon=parseInt(document.getElementById('curMonth')?.value)||SD.getMonth()+1;
+  const sYr=parseInt(document.getElementById('curYear')?.value)||SD.getFullYear();
+  const ngay=`${sDay}/${sMon}/${sYr}`;
+  // Barcode prefix dùng ngày lưu thực tế (SD), không phải ngày biên bản
   const khoaCode=(DEPT_CODES[khoa]||'00').padStart(2,'0');
-  const pfx=String(sYr).slice(-1)+String(sMon).padStart(2,'0')+String(sDay).padStart(2,'0')+khoaCode;
+  const pfx=String(SD.getFullYear()).slice(-1)+String(SD.getMonth()+1).padStart(2,'0')+String(SD.getDate()).padStart(2,'0')+khoaCode;
 
   // ── Khởi động GET barcode NGAY (chạy song song trong khi CPU xây dựng data) ──
   const barcodePromise=fetch(su+'?action=reserve&khoaCode='+encodeURIComponent(khoaCode))
     .then(r=>r.ok?r.json():{}).catch(()=>({}));
 
-  // ── Lịch trực: sau 16:30 → lấy ngày hôm sau ──
-  const isAfter1630=SD.getHours()>16||(SD.getHours()===16&&SD.getMinutes()>=30);
-  const scheduleDate=new Date(SD);
-  if(isAfter1630)scheduleDate.setDate(scheduleDate.getDate()+1);
-  const saveDateISO=`${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth()+1).padStart(2,'0')}-${String(scheduleDate.getDate()).padStart(2,'0')}`;
+  // ── Trích xuất thành viên theo ngày TRANG 1 (user-set, không tự advance) ──
+  const saveDateISO=`${sYr}-${String(sMon).padStart(2,'0')}-${String(sDay).padStart(2,'0')}`;
   autoFillMembers(saveDateISO,khoa);
 
   // ── Xây dựng data rows (trong khi GET đang chạy) ──
@@ -1427,6 +1673,19 @@ function resetForm(){
   document.querySelectorAll('.sdt[aria-hidden] .static-date').forEach((s,i)=>{s.textContent=[d,m,y][i]??'';});
   const skipBtn=document.getElementById('btnSkipTV');
   if(skipBtn){skipBtn.dataset.skip='off';skipBtn.textContent='Điền tự động';skipBtn.style.background='#27ae60';skipBtn.style.color='#fff';skipBtn.style.borderColor='#27ae60';}
+  // Clear TV inputs and sign block inputs from previous biên bản
+  [1,2,3,4,5,6].forEach(pos=>{
+    const tv=getTvByPos(pos);if(tv){tv.value='';tv.classList.remove('hv');}
+    const snc=document.querySelector(`#snc${pos} .snc-inp`);if(snc){snc.value='';snc.classList.remove('hv');}
+  });
+  // Reset pre spans for TV1-3 back to default role label
+  [1,2,3].forEach(pos=>{
+    const inp=getTvByPos(pos);
+    if(!inp)return;
+    const pre=inp.closest('.nl')?.querySelector('.pre');
+    if(pre)pre.innerHTML='Thành viên Hội đồng hủy thuốc';
+  });
+  setSyncDate(); // refresh date to current after new biên bản
   clearBarcodes();
   addRow();addRow();addRow();
   silentRefreshAll();
@@ -1615,13 +1874,18 @@ async function loadScheduleSheet(silent){
 }
 function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
 function findMemberForPos(pos, targetDate, cosoN){
-  // For each STT position, independently find the nearest-date entry
-  const candidates=SCHEDULE_DATA.filter(r=>{
+  // Filter by stt + coSo
+  let candidates=SCHEDULE_DATA.filter(r=>{
     if(parseInt(r.stt)!==pos)return false;
     if(!cosoN)return true;
     const rc=r.coSo.trim().toLowerCase();
     return rc===cosoN||rc==='';
   });
+  // Fallback: if coSo filter yields nothing (e.g. position 4 always has a different coSo),
+  // retry without coSo restriction so it's never skipped
+  if(!candidates.length&&cosoN){
+    candidates=SCHEDULE_DATA.filter(r=>parseInt(r.stt)===pos);
+  }
   if(!candidates.length)return null;
   const parsed=candidates
     .map(r=>({...r,_date:parseShedDate(r.ngay)}))
@@ -1664,9 +1928,14 @@ function updateTvPreviews(){
     return;
   }
   if(!SCHEDULE_DATA.length)return;
-  const now=new Date();
-  const isAfter1630=now.getHours()>16||(now.getHours()===16&&now.getMinutes()>=30);
-  const ld=new Date(now);if(isAfter1630)ld.setDate(ld.getDate()+1);
+  // Use the date user has set in page 1 inputs (falls back to today if empty)
+  const ed=document.getElementById('curDay');
+  const em=document.getElementById('curMonth');
+  const ey=document.getElementById('curYear');
+  const n=new Date();
+  const ld=(ed?.value&&em?.value&&ey?.value)
+    ?new Date(+ey.value,+em.value-1,+ed.value)
+    :n;
   const khoa=document.getElementById('khoaInput')?.value?.trim()||'';
   const cosoN=(DEPT_COSO[khoa]||'').trim().toLowerCase();
   [1,2,3,4].forEach(pos=>{
@@ -1679,10 +1948,12 @@ function updateTvPreviews(){
 function autoFillMembers(saveDateStr,khoa){
   const skip=document.getElementById('btnSkipTV')?.dataset?.skip==='on';
   if(skip){
-    // Toggle ON: clear all TV inputs so names stay blank in PDF
+    // Toggle ON: chỉ xóa các ô TRỐNG, giữ nguyên ô đã điền tay
     [1,2,3,4,5,6].forEach(pos=>{
-      const inp=getTvByPos(pos);if(inp){inp.value='';inp.classList.remove('hv');}
-      const sncInp=document.querySelector(`#snc${pos} .snc-inp`);if(sncInp){sncInp.value='';sncInp.classList.remove('hv');}
+      const inp=getTvByPos(pos);
+      if(inp&&!inp.value.trim()){inp.value='';inp.classList.remove('hv');}
+      const sncInp=document.querySelector(`#snc${pos} .snc-inp`);
+      if(sncInp&&!sncInp.value.trim()){sncInp.value='';sncInp.classList.remove('hv');}
     });
     updateSignBlocks([]);return;
   }
@@ -1691,8 +1962,15 @@ function autoFillMembers(saveDateStr,khoa){
   const cosoN=(DEPT_COSO[khoa]||'').trim().toLowerCase();
   const allMembers=[];
   [1,2,3,4].forEach(pos=>{
-    const m=findMemberForPos(pos,targetDate,cosoN);
     const inp=getTvByPos(pos);if(!inp)return;
+    const manualVal=inp.value.trim();
+    if(manualVal){
+      // Điền tay → giữ nguyên, vẫn ghi nhận vào allMembers để sign block dùng
+      allMembers.push({stt:String(pos),ten:manualVal,khoa:'',coSo:'',ngay:''});
+      return;
+    }
+    // Trống → tự động điền từ lịch
+    const m=findMemberForPos(pos,targetDate,cosoN);
     if(m&&m.ten){inp.value=m.ten;inp.classList.toggle('hv',true);}
     if(pos<=3&&m&&m.khoa){
       const pre=inp.closest('.nl')?.querySelector('.pre');
@@ -1705,10 +1983,10 @@ function autoFillMembers(saveDateStr,khoa){
 function updateSignBlocks(members){
   [1,2,3,4,5,6].forEach(pos=>{
     const inp=document.querySelector(`#snc${pos} .snc-inp`);if(!inp)return;
-    if(!members.length){inp.value='';inp.classList.remove('hv');return;} // skip ON → clear
+    if(!members.length){if(!inp.value.trim()){inp.value='';inp.classList.remove('hv');}return;} // skip ON → xóa trống, giữ điền tay
+    if(inp.value.trim())return; // điền tay → giữ nguyên, bỏ qua tự động
     const m=members.find(r=>parseInt(r.stt)===pos);
     if(m&&m.ten){inp.value=m.ten;inp.classList.add('hv');}
-    // positions without a match: keep manual entry intact
   });
 }
 
@@ -1767,17 +2045,18 @@ async function loadDeptsFromSheet(silent){
     const res = await fetch(u);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = parseCsv(await res.text());
-    // Column A: tên khoa; Column B: mã khoa 2 số
-    const newDepts = [], newCodes = {}, newCoSo = {};
+    // Column A: tên khoa; Column B: mã khoa 2 số; Column C: cơ sở; Column D: mật khẩu đăng nhập (Quản lý biên bản thuốc)
+    const newDepts = [], newCodes = {}, newCoSo = {}, newPass = {};
     rows.slice(1).forEach(r=>{
       const name=(r[0]||'').trim();
       const code=(r[1]||'').trim();
       const coso=(r[2]||'').trim();
-      if(name){ newDepts.push(name); if(code) newCodes[name]=code.padStart(2,'0'); if(coso) newCoSo[name]=coso; }
+      const pass=(r[3]||'').trim();
+      if(name){ newDepts.push(name); if(code) newCodes[name]=code.padStart(2,'0'); if(coso) newCoSo[name]=coso; if(pass) newPass[name]=pass; }
     });
     if(!newDepts.length) throw new Error('Không đọc được danh sách khoa. Sheet cần có cột "Tên khoa/Trung tâm".');
-    DEPTS = newDepts; DEPT_CODES = newCodes; DEPT_COSO = newCoSo;
-    if(!silent){ localStorage.setItem('deptSheetUrl', raw); localStorage.setItem('deptCodes', JSON.stringify(newCodes)); localStorage.setItem('deptCoSo', JSON.stringify(newCoSo)); }
+    DEPTS = newDepts; DEPT_CODES = newCodes; DEPT_COSO = newCoSo; DEPT_PASS = newPass;
+    if(!silent){ localStorage.setItem('deptSheetUrl', raw); localStorage.setItem('deptCodes', JSON.stringify(newCodes)); localStorage.setItem('deptCoSo', JSON.stringify(newCoSo)); localStorage.setItem('deptPass', JSON.stringify(newPass)); }
     saveDepts();renderDeptList();
     if(!silent)setSt('deptSheetStatus','ok',`✅ Đã tải ${depts.length} khoa/trung tâm`);
   }catch(e){
@@ -1893,6 +2172,272 @@ document.addEventListener('scroll', e=>{
   fKhoaClose();
 },true);
 
+/* ══════════ QUẢN LÝ BIÊN BẢN THUỐC ══════════ */
+const THUOC_DEFAULT_KHOA_PASS='khoa2026';
+const THUOC_DEFAULT_COUNCIL_PASS='hoidong2026';
+
+function thuocSwitchTab(t){
+  document.getElementById('tabKhoa').classList.toggle('active',t==='khoa');
+  document.getElementById('tabCouncil').classList.toggle('active',t==='council');
+  document.getElementById('loginKhoaBox').style.display=t==='khoa'?'':'none';
+  document.getElementById('loginCouncilBox').style.display=t==='council'?'':'none';
+  document.getElementById('thuocLoginErr').style.display='none';
+}
+
+/* Searchable khoa dropdown dùng riêng cho màn đăng nhập (tái dùng DEPTS) */
+function thuocKhoaSSRender(q){
+  const list=document.getElementById('thuocKhoaSSList'); if(!list)return;
+  const filtered=q?DEPTS.filter(d=>d.toLowerCase().includes(q.toLowerCase())):DEPTS;
+  list.innerHTML='';
+  if(!filtered.length){list.style.display='none';return;}
+  filtered.forEach(d=>{
+    const div=document.createElement('div');
+    div.className='ss-opt'; div.textContent=d;
+    div.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      document.getElementById('thuocKhoaInput').value=d;
+      thuocKhoaSSClose();
+    });
+    list.appendChild(div);
+  });
+}
+function thuocKhoaSSFilter(q){ thuocKhoaSSRender(q); thuocKhoaSSOpen(); }
+function thuocKhoaSSOpen(){
+  if(!DEPTS.length) return;
+  const inp=document.getElementById('thuocKhoaInput'); const list=document.getElementById('thuocKhoaSSList');
+  if(!list) return;
+  thuocKhoaSSRender(inp.value);
+  const rect=inp.getBoundingClientRect();
+  Object.assign(list.style,{top:rect.bottom+'px',left:rect.left+'px',minWidth:rect.width+'px',maxWidth:rect.width+'px',display:'block'});
+}
+function thuocKhoaSSClose(){ const l=document.getElementById('thuocKhoaSSList'); if(l)l.style.display='none'; }
+
+function thuocLoginErr(msg){ const e=document.getElementById('thuocLoginErr'); e.textContent=msg; e.style.display='block'; }
+
+function thuocLoginKhoa(){
+  const khoa=(document.getElementById('thuocKhoaInput').value||'').trim();
+  const pass=(document.getElementById('thuocKhoaPass').value||'').trim();
+  if(!khoa){thuocLoginErr('⚠️ Vui lòng chọn khoa/trung tâm.');return;}
+  if(!DEPTS.includes(khoa)){thuocLoginErr('⚠️ Khoa/trung tâm không có trong danh sách.');return;}
+  const expected=DEPT_PASS[khoa]||THUOC_DEFAULT_KHOA_PASS;
+  if(pass!==expected){thuocLoginErr('🔴 Sai mật khẩu. Vui lòng thử lại.');return;}
+  sessionStorage.setItem('thuocSession',JSON.stringify({role:'khoa',khoa}));
+  document.getElementById('thuocKhoaPass').value='';
+  thuocRenderSession();
+}
+function thuocLoginCouncil(){
+  const pass=(document.getElementById('thuocCouncilPass').value||'').trim();
+  const expected=COUNCIL_PASS||THUOC_DEFAULT_COUNCIL_PASS;
+  if(pass!==expected){thuocLoginErr('🔴 Sai mật khẩu hội đồng.');return;}
+  sessionStorage.setItem('thuocSession',JSON.stringify({role:'council'}));
+  document.getElementById('thuocCouncilPass').value='';
+  thuocRenderSession();
+}
+function thuocLogout(){
+  sessionStorage.removeItem('thuocSession');
+  thuocRenderSession();
+}
+function thuocGetSession(){
+  try{return JSON.parse(sessionStorage.getItem('thuocSession')||'null');}catch{return null;}
+}
+
+function thuocRenderSession(){
+  const s=thuocGetSession();
+  const loginV=document.getElementById('thuocLoginView');
+  const khoaV=document.getElementById('thuocKhoaView');
+  const councilV=document.getElementById('thuocCouncilView');
+  if(!loginV) return; // screen chưa render (không xảy ra bình thường)
+  loginV.style.display = s ? 'none' : '';
+  khoaV.style.display = (s&&s.role==='khoa') ? '' : 'none';
+  councilV.style.display = (s&&s.role==='council') ? '' : 'none';
+  document.getElementById('thuocLogoutBtn').style.display = s ? '' : 'none';
+  if(s && s.role==='khoa'){
+    document.getElementById('thuocKhoaName').textContent='🏥 '+s.khoa;
+    thuocRefreshKhoa();
+  } else if(s && s.role==='council'){
+    thuocRefreshCouncil();
+  }
+}
+
+/* ── Tải dữ liệu ── */
+async function thuocRefreshKhoa(){ await loadOutSheet(true); await thuocLoadRequests(); thuocRenderKhoaList(); }
+async function thuocRefreshCouncil(){ await loadOutSheet(true); await thuocLoadRequests(); thuocRenderCouncilList(); }
+
+async function thuocLoadRequests(){
+  const su=localStorage.getItem('scriptUrl');
+  if(!su) return;
+  try{
+    const res=await fetch(su+'?action=listCancelRequests');
+    if(!res.ok) return;
+    const data=await res.json();
+    if(data && data.status==='ok' && Array.isArray(data.items)) REQ_DATA=data.items;
+  }catch(e){ /* Apps Script chưa hỗ trợ hoặc lỗi mạng — coi như chưa có đề xuất nào */ }
+}
+
+function thuocReqForMsbb(msbb){
+  const items=REQ_DATA.filter(r=>r.msbb===msbb);
+  if(!items.length) return null;
+  items.sort((a,b)=>(a.thoiGian||'').localeCompare(b.thoiGian||''));
+  return items[items.length-1];
+}
+function thuocStatusTag(req){
+  if(!req) return '<span class="status-tag none">Chưa đề xuất hủy</span>';
+  if(req.trangThai==='approved') return '<span class="status-tag approved">✔ Đã duyệt hủy</span>';
+  if(req.trangThai==='rejected') return '<span class="status-tag rejected">✖ Bị từ chối</span>';
+  return '<span class="status-tag pending">⏳ Chờ hội đồng duyệt</span>';
+}
+
+/* Gom OUT_DATA (mỗi dòng = 1 dòng thuốc) thành danh sách biên bản (theo MSBB) của 1 khoa */
+function thuocBienBanForKhoa(khoa){
+  const map=new Map();
+  OUT_DATA.forEach(r=>{
+    const msbb=r[0], ngayLuu=r[1], ngayBB=r[2], k=r[3];
+    if(k!==khoa) return;
+    if(!map.has(msbb)) map.set(msbb,{msbb,ngayBB,ngayLuu,count:0});
+    map.get(msbb).count++;
+  });
+  return [...map.values()];
+}
+function thuocParseDMY(s){
+  const p=(s||'').split('/'); if(p.length<3) return null;
+  return new Date(+p[2],+p[1]-1,+p[0]);
+}
+
+function thuocRenderKhoaList(){
+  const s=thuocGetSession(); if(!s||s.role!=='khoa') return;
+  const wrap=document.getElementById('thuocKhoaList');
+  let items=thuocBienBanForKhoa(s.khoa);
+  const fromV=document.getElementById('thuocFromDate').value;
+  const toV=document.getElementById('thuocToDate').value;
+  const fromD=fromV?new Date(fromV):null;
+  const toD=toV?new Date(toV):null;
+  if(fromD||toD){
+    items=items.filter(it=>{
+      const d=thuocParseDMY(it.ngayBB); if(!d) return true;
+      if(fromD && d<fromD) return false;
+      if(toD && d>toD) return false;
+      return true;
+    });
+  }
+  items.sort((a,b)=>{
+    const da=thuocParseDMY(a.ngayBB), db=thuocParseDMY(b.ngayBB);
+    return (db?db.getTime():0)-(da?da.getTime():0);
+  });
+  if(!items.length){ wrap.innerHTML='<div class="thuoc-empty">Không có biên bản nào trong khoảng thời gian đã chọn.</div>'; return; }
+  const groups=new Map();
+  items.forEach(it=>{ if(!groups.has(it.ngayBB)) groups.set(it.ngayBB,[]); groups.get(it.ngayBB).push(it); });
+  let html='';
+  groups.forEach((list,ngay)=>{
+    html+=`<div class="thuoc-datebox">📅 Ngày ${ngay} — ${list.length} biên bản</div>`;
+    list.forEach(it=>{
+      const req=thuocReqForMsbb(it.msbb);
+      const canPropose = !req || req.trangThai==='rejected';
+      html+=`<div class="bb-item">
+        <span class="msbb">${it.msbb}</span>
+        <span class="meta grow">${it.count} dòng thuốc • lưu lúc ${it.ngayLuu}</span>
+        ${thuocStatusTag(req)}
+        ${canPropose?`<button class="btn btn-or" onclick="thuocOpenCancelModal('${String(it.msbb).replace(/'/g,"\\'")}')">🗑️ Đề xuất hủy</button>`:''}
+      </div>`;
+    });
+  });
+  wrap.innerHTML=html;
+}
+
+/* ── Modal đề xuất hủy (khoa) ── */
+let _cancelTargetMsbb=null;
+function thuocOpenCancelModal(msbb){
+  _cancelTargetMsbb=msbb;
+  document.getElementById('cancelModalMsbb').textContent=msbb;
+  document.getElementById('cancelReasonInput').value='';
+  document.getElementById('thuocCancelModal').classList.add('show');
+}
+function thuocCloseCancelModal(){ document.getElementById('thuocCancelModal').classList.remove('show'); _cancelTargetMsbb=null; }
+
+async function thuocSubmitCancel(){
+  const s=thuocGetSession(); if(!s||s.role!=='khoa') return;
+  const reason=(document.getElementById('cancelReasonInput').value||'').trim();
+  if(!reason){ alert('⚠️ Vui lòng nhập lý do đề xuất hủy.'); return; }
+  const su=localStorage.getItem('scriptUrl');
+  if(!su){ alert('Chưa cấu hình Apps Script (Trang chủ → Cấu hình lưu biên bản).'); return; }
+  const it=thuocBienBanForKhoa(s.khoa).find(x=>x.msbb===_cancelTargetMsbb);
+  const params=new URLSearchParams({
+    action:'submitCancelRequest', msbb:_cancelTargetMsbb, khoa:s.khoa,
+    ngayBienBan:it?.ngayBB||'', lyDo:reason, nguoiDeXuat:s.khoa
+  });
+  try{
+    const res=await fetch(su+'?'+params.toString());
+    const data=await res.json().catch(()=>({status:'ok'}));
+    if(data.status && data.status!=='ok') throw new Error(data.message||'Lỗi không xác định');
+    thuocCloseCancelModal();
+    await thuocRefreshKhoa();
+    alert('✅ Đã gửi đề xuất hủy. Vui lòng chờ Hội đồng thuốc xét duyệt.');
+  }catch(e){
+    alert('🔴 Gửi đề xuất thất bại: '+e.message+'\n(Kiểm tra Apps Script đã hỗ trợ action "submitCancelRequest" chưa — xem mục "Yêu cầu cấu hình Apps Script" bên dưới.)');
+  }
+}
+
+/* ── Dashboard Hội đồng thuốc ── */
+function thuocRenderCouncilList(){
+  const wrap=document.getElementById('thuocCouncilList');
+  const showAll=document.getElementById('thuocShowAllReq').checked;
+  let items=[...REQ_DATA];
+  if(!showAll) items=items.filter(r=>r.trangThai!=='approved'&&r.trangThai!=='rejected');
+  items.sort((a,b)=>(b.thoiGian||'').localeCompare(a.thoiGian||''));
+  if(!items.length){ wrap.innerHTML='<div class="thuoc-empty">Không có đề xuất hủy nào.</div>'; return; }
+  let html='';
+  items.forEach(r=>{
+    const pending = !(r.trangThai==='approved'||r.trangThai==='rejected');
+    html+=`<div class="req-item">
+      <div class="row1">
+        <div><b>${r.khoa||''}</b> — MSBB <span class="msbb" style="color:var(--ac);font-family:'Courier New',monospace;">${r.msbb||''}</span></div>
+        ${thuocStatusTag(r)}
+      </div>
+      <div class="meta" style="font-size:11.5px;color:#888;">Ngày biên bản: ${r.ngayBienBan||''} • Đề xuất bởi: ${r.nguoiDeXuat||''} lúc ${r.thoiGian||''}</div>
+      <div class="lydo">📝 ${String(r.lyDo||'').replace(/</g,'&lt;')}</div>
+      ${r.ghiChuDuyet?`<div class="meta">Ghi chú hội đồng: ${r.ghiChuDuyet}</div>`:''}
+      ${pending?`<div class="acts">
+        <button class="btn btn-g" onclick="thuocOpenDecideModal('${String(r.id||'').replace(/'/g,"\\'")}','${String(r.msbb||'').replace(/'/g,"\\'")}','approve')">✔ Duyệt hủy</button>
+        <button class="btn" style="background:var(--re);color:#fff;" onclick="thuocOpenDecideModal('${String(r.id||'').replace(/'/g,"\\'")}','${String(r.msbb||'').replace(/'/g,"\\'")}','reject')">✖ Từ chối</button>
+      </div>`:''}
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+let _decideTarget=null;
+function thuocOpenDecideModal(id,msbb,decision){
+  _decideTarget={id,decision};
+  document.getElementById('decideModalTitle').textContent = decision==='approve' ? '✔ Duyệt hủy biên bản' : '✖ Từ chối đề xuất hủy';
+  document.getElementById('decideModalMsbb').textContent=msbb;
+  document.getElementById('decideNoteInput').value='';
+  const btn=document.getElementById('decideConfirmBtn');
+  btn.className = decision==='approve' ? 'btn btn-g' : 'btn';
+  btn.style.background = decision==='approve' ? '' : 'var(--re)';
+  btn.style.color = decision==='approve' ? '' : '#fff';
+  document.getElementById('thuocDecideModal').classList.add('show');
+}
+function thuocCloseDecideModal(){ document.getElementById('thuocDecideModal').classList.remove('show'); _decideTarget=null; }
+
+async function thuocConfirmDecide(){
+  if(!_decideTarget) return;
+  const su=localStorage.getItem('scriptUrl');
+  if(!su){ alert('Chưa cấu hình Apps Script.'); return; }
+  const ghiChu=(document.getElementById('decideNoteInput').value||'').trim();
+  const params=new URLSearchParams({
+    action:'decideCancelRequest', id:_decideTarget.id, decision:_decideTarget.decision,
+    nguoiDuyet:'Hội đồng thuốc', ghiChu
+  });
+  try{
+    const res=await fetch(su+'?'+params.toString());
+    const data=await res.json().catch(()=>({status:'ok'}));
+    if(data.status && data.status!=='ok') throw new Error(data.message||'Lỗi không xác định');
+    thuocCloseDecideModal();
+    await thuocRefreshCouncil();
+  }catch(e){
+    alert('🔴 Xét duyệt thất bại: '+e.message+'\n(Kiểm tra Apps Script đã hỗ trợ action "decideCancelRequest" chưa — xem mục "Yêu cầu cấu hình Apps Script" bên dưới.)');
+  }
+}
+
 /* ── INIT ── */
 renderDeptList();
 updateKhoaDropdowns();
@@ -1904,6 +2449,7 @@ silentRefreshAll().then(()=>{
   if(!document.querySelectorAll('#tbody tr:not(.note-row)').length){
     addRow();addRow();addRow();
   }
+  setSyncDate(); // set date inputs + update TV previews after first-load sync
 });
 </script>
 </body>
