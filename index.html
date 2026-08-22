@@ -268,6 +268,27 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .login-err{display:none;margin-top:14px;background:#fdecea;color:var(--re);border-radius:7px;padding:9px 12px;font-size:12.5px;line-height:1.5;}
 .login-err.show{display:block;}
 .login-lock{text-align:center;margin-bottom:8px;font-size:26px;margin-top:18px;}
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:38px!important;}
+.pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:#888;padding:4px;line-height:1;}
+.login-lockout{display:none;margin-top:14px;background:#fff3cd;color:#8a6d00;border:1px solid #ffe08a;border-radius:7px;padding:9px 12px;font-size:12px;line-height:1.5;}
+.login-lockout.show{display:block;}
+
+/* ── MODAL (xem/in lại biên bản, đề nghị hủy) ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(20,25,35,.6);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:32px 16px;overflow:auto;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:#fff;border-radius:12px;max-width:1100px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.4);}
+.modal-box.modal-sm{max-width:460px;}
+.modal-topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;border-radius:12px 12px 0 0;z-index:2;flex-wrap:wrap;}
+.modal-topbar .pg-title{font-weight:700;color:var(--ac);font-family:Arial,sans-serif;font-size:14px;}
+.modal-scroll{padding:22px;max-height:78vh;overflow:auto;}
+.rpt-reprint-note{font-size:11.5px;color:#c0392b;font-style:italic;margin:2px 0 8px;font-family:Arial,sans-serif;}
+
+.status-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:Arial,sans-serif;white-space:nowrap;}
+.status-badge.st-huy{background:#e8f0fe;color:#1a4d8f;}
+.status-badge.st-dexuat{background:#fff3cd;color:#8a6d00;}
+.status-badge.st-duyet{background:#e3f7e9;color:#1e7d52;}
+.status-badge.st-duyetsua{background:#eee3ff;color:#5a2ea6;}
 
 /* ── PRINT ── */
 @media print{
@@ -335,10 +356,13 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-report] #rptArea{display:block!important;}
   body[data-ps=s-report] .rpt-wrap{box-shadow:none;padding:0;}
   body[data-ps=s-report] table.rpt input{border:none!important;}
-  body[data-ps=s-khoa-view] #s-khoa-view{display:block!important;}
-  body[data-ps=s-khoa-view] .adm-hdr,body[data-ps=s-khoa-view] .back-bar{display:none!important;}
-  body[data-ps=s-khoa-view] .acard{box-shadow:none;padding:0;margin:0;}
-  body[data-ps=s-khoa-view] .rpt-wrap{box-shadow:none;padding:0;}
+  /* Modal xem/in lại biên bản khoa — in trực tiếp từ popup, không qua màn hình riêng */
+  .khoa-modal-open .scr{display:none!important;}
+  .khoa-modal-open #khoaViewModalOverlay{position:static!important;background:none!important;padding:0!important;display:block!important;}
+  .khoa-modal-open .modal-topbar,.khoa-modal-open .modal-close-x{display:none!important;}
+  .khoa-modal-open .modal-box{box-shadow:none!important;max-width:none!important;border-radius:0!important;}
+  .khoa-modal-open .modal-scroll{max-height:none!important;overflow:visible!important;padding:0!important;}
+  .rpt-audit-block{display:none!important;}
   @page{size:A4 landscape;margin:10mm;}
 }
 #printBlockNotice{display:none;}
@@ -376,9 +400,13 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <div class="ss-list" id="khoaLoginList"></div>
         </div>
         <label for="khoaLoginPass">Mật khẩu</label>
-        <input type="password" id="khoaLoginPass" autocomplete="current-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doKhoaLogin();">
+        <div class="pw-wrap">
+          <input type="password" id="khoaLoginPass" autocomplete="current-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doKhoaLogin();">
+          <button type="button" class="pw-toggle" onclick="togglePwVisible('khoaLoginPass',this)" tabindex="-1">👁️</button>
+        </div>
         <button class="btn btn-p" id="btnKhoaLogin" onclick="doKhoaLogin()">🔑 Đăng nhập</button>
         <div id="khoaLoginErr" class="login-err"></div>
+        <div id="khoaLoginLockout" class="login-lockout"></div>
       </div>
 
       <!-- FORM HỘI ĐỒNG HỦY THUỐC (QUẢN TRỊ) -->
@@ -386,9 +414,13 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
         <label for="loginUser">Tên đăng nhập</label>
         <input type="text" id="loginUser" autocomplete="username" placeholder="Nhập tên đăng nhập" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus();">
         <label for="loginPass">Mật khẩu</label>
-        <input type="password" id="loginPass" autocomplete="current-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doLogin();">
+        <div class="pw-wrap">
+          <input type="password" id="loginPass" autocomplete="current-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doLogin();">
+          <button type="button" class="pw-toggle" onclick="togglePwVisible('loginPass',this)" tabindex="-1">👁️</button>
+        </div>
         <button class="btn btn-p" id="btnAdminLogin" onclick="doLogin()">🔑 Đăng nhập</button>
         <div id="loginErr" class="login-err"></div>
+        <div id="adminLoginLockout" class="login-lockout"></div>
       </div>
 
       <div style="display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:#bbb;font-size:11px;">
@@ -402,20 +434,45 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 <!-- ══════════ S-KHOA-PORTAL (cổng thông tin của khoa sau khi đăng nhập) ══════════ -->
 <div class="scr" id="s-khoa-portal">
   <div class="adm-hdr" style="position:relative;">
-    <div class="hosp">Bệnh viện Nhi Trung ương — Hội đồng hủy thuốc</div>
+    <div class="hosp">Bệnh viện Nhi Trung ương</div>
     <h1 id="khoaPortalTitle">Khoa/Trung tâm</h1>
-    <div class="sub">Cổng biên bản hủy bao bì TXTT</div>
-    <button onclick="doKhoaLogout()" style="position:absolute;top:20px;right:30px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 12px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">⎋ Đăng xuất</button>
-  </div>
-  <div class="adm-body" style="max-width:1000px;">
-    <div class="acard">
-      <button class="open-btn" onclick="goKhoaForm()" style="width:100%;justify-content:center;">📝 Tạo biên bản hủy thuốc mới</button>
+    <div class="sub">Quản lý biên bản hủy thuốc theo khoa</div>
+    <div style="position:absolute;top:20px;right:30px;display:flex;gap:10px;">
+      <button onclick="goKhoaForm()" style="background:#ff9f1c;color:#1a1200;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;">📝 Tạo biên bản hủy thuốc mới</button>
+      <button onclick="doKhoaLogout()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 14px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">⎋ Đăng xuất</button>
     </div>
+  </div>
+  <div class="adm-body" style="max-width:1100px;">
     <div class="acard">
-      <h2>📋 Biên bản đã lưu của khoa</h2>
-      <div class="desc">Danh sách các biên bản hủy thuốc do khoa đã lập, lấy từ CSDL thô. Bấm "Đồng bộ lại" nếu vừa có biên bản mới lưu.</div>
-      <div style="margin:8px 0 4px;"><button class="btn btn-gh" onclick="loadKhoaPortalList()" id="btnKhoaSync">🔄 Đồng bộ lại</button></div>
-      <div id="khoaBBListWrap" style="overflow-x:auto;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn btn-gh" onclick="loadKhoaPortalList()" id="btnKhoaSync">🔄 Đồng bộ lại</button>
+        <span id="khoaSyncStatus" style="font-size:12px;color:#888;font-family:Arial,sans-serif;"></span>
+      </div>
+
+      <div class="theo-filters" style="margin-bottom:16px;">
+        <label>Từ ngày (biên bản)
+          <input type="date" id="khoaFFromDate" onchange="renderKhoaBBTable()">
+        </label>
+        <label>Đến ngày (biên bản)
+          <input type="date" id="khoaFToDate" onchange="renderKhoaBBTable()">
+        </label>
+        <label>Mã biên bản
+          <input type="text" id="khoaFMsbb" placeholder="Tìm theo mã…" oninput="renderKhoaBBTable()"
+            style="padding:7px 10px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;min-width:140px;">
+        </label>
+        <label>Trạng thái
+          <select id="khoaFStatus" onchange="renderKhoaBBTable()"
+            style="padding:7px 10px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;background:#fff;min-width:150px;">
+            <option value="">-- Tất cả --</option>
+            <option value="Đã hủy">Đã hủy</option>
+            <option value="Đề xuất hủy">Đề xuất hủy</option>
+            <option value="Đã duyệt">Đã duyệt</option>
+            <option value="Đã duyệt (có chỉnh sửa)">Đã duyệt (có chỉnh sửa)</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="khoaBBListWrap" style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
           <thead>
             <tr style="background:#f0f4fa;text-align:left;">
@@ -424,27 +481,48 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Ngày biên bản</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Ngày lưu</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Số dòng thuốc</th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Trạng thái</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Thao tác</th>
             </tr>
           </thead>
-          <tbody id="khoaBBListBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Đang tải…</td></tr></tbody>
+          <tbody id="khoaBBListBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:#999;">Đang tải…</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════ S-KHOA-VIEW (xem/in lại 1 biên bản) ══════════ -->
-<div class="scr" id="s-khoa-view">
-  <div class="adm-hdr"><div class="hosp">Bệnh viện Nhi Trung ương</div><h1>Hệ thống biên bản hủy bao bì TXTT</h1></div>
-  <div class="back-bar">
-    <button class="back-btn" onclick="go('s-khoa-portal')">← Danh sách biên bản</button>
-    <span class="pg-title">📄 Xem lại biên bản</span>
-    <button class="btn btn-p" style="margin-left:auto;" onclick="window.print()">🖨️ In</button>
+<!-- ══════════ MODAL: Xem/In lại biên bản ══════════ -->
+<div class="modal-overlay" id="khoaViewModalOverlay">
+  <div class="modal-box">
+    <div class="modal-topbar">
+      <button class="btn btn-gh" onclick="closeKhoaViewModal()">✕ Đóng</button>
+      <span class="pg-title">📄 Xem lại biên bản</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="background:#c0392b;color:#fff;" onclick="openDeNghiHuyModal(_currentModalMsbb)">🚫 Đề nghị hủy</button>
+        <button class="btn btn-p" onclick="printKhoaModal()">🖨️ In</button>
+      </div>
+    </div>
+    <div class="modal-scroll" id="khoaViewModalBody"></div>
   </div>
-  <div class="adm-body" style="max-width:1100px;">
-    <div class="acard" id="khoaViewCard">
-      <div id="khoaViewArea"></div>
+</div>
+
+<!-- ══════════ MODAL: Đề nghị hủy ══════════ -->
+<div class="modal-overlay" id="deNghiHuyModalOverlay">
+  <div class="modal-box modal-sm">
+    <div class="modal-topbar">
+      <button class="btn btn-gh" onclick="closeDeNghiHuyModal()">✕ Đóng</button>
+      <span class="pg-title">🚫 Đề nghị hủy biên bản</span>
+      <span></span>
+    </div>
+    <div class="modal-scroll">
+      <p style="font-family:Arial,sans-serif;font-size:13px;color:#555;margin:0 0 14px;">Mã biên bản: <b id="deNghiHuyMsbb">—</b></p>
+      <label style="display:block;font-size:12.5px;color:#555;margin-bottom:5px;font-family:Arial,sans-serif;">Tên người đề nghị hủy</label>
+      <input type="text" id="deNghiHuyNguoi" placeholder="Nhập họ và tên" style="width:100%;padding:10px 12px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;margin-bottom:14px;">
+      <label style="display:block;font-size:12.5px;color:#555;margin-bottom:5px;font-family:Arial,sans-serif;">Lý do hủy</label>
+      <textarea id="deNghiHuyLyDo" rows="3" placeholder="Nhập lý do đề nghị hủy…" style="width:100%;padding:10px 12px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;resize:vertical;"></textarea>
+      <div id="deNghiHuyErr" class="login-err"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:16px;" onclick="submitDeNghiHuy()" id="btnSubmitDeNghiHuy">📨 Gửi đề nghị hủy</button>
     </div>
   </div>
 </div>
@@ -857,7 +935,53 @@ function showKhoaLogin(){
   document.getElementById('s-login').classList.add('active');
   switchLoginTab('khoa');
 }
+
+/* ── BẢO MẬT ĐĂNG NHẬP: hiện/ẩn mật khẩu + khoá tạm sau nhiều lần sai (chống dò mật khẩu tự động) ── */
+function togglePwVisible(inputId, btn){
+  const inp=document.getElementById(inputId);
+  if(!inp) return;
+  const show = inp.type==='password';
+  inp.type = show?'text':'password';
+  btn.textContent = show?'🙈':'👁️';
+}
+
+const LOGIN_MAX_ATTEMPTS=5;
+const LOGIN_LOCK_MS=60*1000; // khoá 60 giây sau khi sai quá số lần cho phép
+
+function _loginAttemptKey(scope){ return 'loginAttempt_'+scope; }
+function getLoginLockState(scope){
+  try{ return JSON.parse(sessionStorage.getItem(_loginAttemptKey(scope))||'{"count":0,"lockUntil":0}'); }
+  catch(e){ return {count:0,lockUntil:0}; }
+}
+function setLoginLockState(scope,state){ sessionStorage.setItem(_loginAttemptKey(scope), JSON.stringify(state)); }
+function registerLoginFail(scope){
+  const st=getLoginLockState(scope);
+  st.count=(st.count||0)+1;
+  if(st.count>=LOGIN_MAX_ATTEMPTS){ st.lockUntil=Date.now()+LOGIN_LOCK_MS; st.count=0; }
+  setLoginLockState(scope,st);
+}
+function clearLoginLock(scope){ setLoginLockState(scope,{count:0,lockUntil:0}); }
+/* Trả về số giây còn khoá (0 nếu không bị khoá) */
+function checkLoginLocked(scope){
+  const st=getLoginLockState(scope);
+  if(st.lockUntil && Date.now()<st.lockUntil) return Math.ceil((st.lockUntil-Date.now())/1000);
+  return 0;
+}
+function showLoginLockoutMsg(elId,secs){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  el.textContent=`🔒 Bạn đã nhập sai quá ${LOGIN_MAX_ATTEMPTS} lần. Vui lòng thử lại sau ${secs} giây.`;
+  el.classList.add('show');
+}
+function hideLoginLockoutMsg(elId){
+  const el=document.getElementById(elId);
+  if(el) el.classList.remove('show');
+}
+
 function doLogin(){
+  const lockSecs=checkLoginLocked('admin');
+  if(lockSecs>0){ showLoginLockoutMsg('adminLoginLockout',lockSecs); return; }
+  hideLoginLockoutMsg('adminLoginLockout');
   const u=(document.getElementById('loginUser').value||'').trim();
   const p=(document.getElementById('loginPass').value||'');
   const validUser = LOGIN_USER || localStorage.getItem('loginUser') || '';
@@ -875,13 +999,17 @@ function doLogin(){
   }
   if(u===validUser && p===validPass){
     sessionStorage.setItem('authOk','1');
+    clearLoginLock('admin');
     errEl.classList.remove('show');
     document.getElementById('loginPass').value='';
     if(location.hash==='#admin-login'||!location.hash) location.hash='';
     checkRoute();
   }else{
-    errEl.textContent='🔴 Sai tên đăng nhập hoặc mật khẩu.';
-    errEl.classList.add('show');
+    registerLoginFail('admin');
+    document.getElementById('loginPass').value='';
+    const secs=checkLoginLocked('admin');
+    if(secs>0){ showLoginLockoutMsg('adminLoginLockout',secs); errEl.classList.remove('show'); }
+    else{ errEl.textContent='🔴 Sai tên đăng nhập hoặc mật khẩu.'; errEl.classList.add('show'); }
   }
 }
 function doLogout(){
@@ -931,6 +1059,9 @@ function khoaLoginOpen(){
 function khoaLoginClose(){ const l=document.getElementById('khoaLoginList'); if(l)l.style.display='none'; }
 
 function doKhoaLogin(){
+  const lockSecs=checkLoginLocked('khoa');
+  if(lockSecs>0){ showLoginLockoutMsg('khoaLoginLockout',lockSecs); return; }
+  hideLoginLockoutMsg('khoaLoginLockout');
   const uInp=document.getElementById('khoaLoginUser');
   const pInp=document.getElementById('khoaLoginPass');
   const u=(uInp.value||'').trim();
@@ -944,25 +1075,26 @@ function doKhoaLogin(){
   }
   // Cho phép gõ không phân biệt hoa/thường, nhưng khớp đúng tên khoa trong danh sách
   const matched = DEPTS.find(d=>d.toLowerCase()===u.toLowerCase());
-  if(!matched){
-    errEl.textContent='🔴 Không tìm thấy khoa/trung tâm này trong danh sách.';
-    errEl.classList.add('show');
+  const validPass = matched ? (DEPT_PASS[matched]||'') : '';
+  // Thông báo lỗi gộp chung cho "không tìm thấy khoa" và "sai mật khẩu" — tránh lộ thông tin
+  // khoa nào tồn tại trong hệ thống cho người dò mật khẩu (dò tên khoa qua thông báo lỗi khác nhau).
+  if(!matched || (matched && DEPT_PASS[matched] && p!==validPass)){
+    registerLoginFail('khoa');
+    pInp.value='';
+    const secs=checkLoginLocked('khoa');
+    if(secs>0){ showLoginLockoutMsg('khoaLoginLockout',secs); }
+    else{ errEl.textContent='🔴 Tên khoa/trung tâm hoặc mật khẩu không đúng.'; errEl.classList.add('show'); }
     return;
   }
-  const validPass = DEPT_PASS[matched] || '';
   if(!validPass){
     errEl.textContent='⚠️ Khoa này chưa được cấp mật khẩu đăng nhập. Liên hệ quản trị viên để bổ sung cột "Mật khẩu" trong Sheet danh sách khoa.';
     errEl.classList.add('show');
     return;
   }
-  if(p!==validPass){
-    errEl.textContent='🔴 Sai mật khẩu.';
-    errEl.classList.add('show');
-    return;
-  }
   sessionStorage.setItem('khoaAuth', JSON.stringify({khoa:matched}));
+  clearLoginLock('khoa');
   pInp.value='';
-  document.getElementById('khoaPortalTitle').textContent='Khoa: '+matched;
+  document.getElementById('khoaPortalTitle').textContent=matched;
   location.hash='#khoa-portal';
   go('s-khoa-portal');
 }
@@ -985,54 +1117,131 @@ function goKhoaForm(){
 }
 
 /* Danh sách biên bản đã lưu của khoa (nhóm theo Mã biên bản — từ CSDL thô) */
+/* ── DANH SÁCH BIÊN BẢN CỦA KHOA (có bộ lọc + trạng thái) ── */
+let _khoaBBGroups=[]; // dữ liệu gốc (chưa lọc) — [{msbb,ngayLuu,ngayBB,count,status}]
+
+/* Cột "Audit": chuỗi JSON mảng lịch sử thay đổi trạng thái — parse an toàn, luôn trả về mảng */
+function parseAuditJson(raw){
+  if(!raw) return [];
+  try{ const a=JSON.parse(raw); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function auditHtml(audit){
+  if(!audit||!audit.length) return '<div style="color:#999;font-size:12px;font-family:Arial,sans-serif;">Chưa có lịch sử.</div>';
+  return '<ul style="margin:0;padding-left:18px;font-size:12px;font-family:Arial,sans-serif;line-height:1.8;color:#333;">'+
+    audit.map(a=>`<li><b>${a.thoiGian||''}</b> — ${a.hanhDong||''}${a.nguoiThucHien?' bởi <b>'+a.nguoiThucHien+'</b>':''}${a.lyDo?' — Lý do: '+a.lyDo:''}</li>`).join('')+
+    '</ul>';
+}
+
+function statusBadgeHtml(status){
+  const s=status||'Đã hủy';
+  let cls='st-huy';
+  if(s==='Đề xuất hủy') cls='st-dexuat';
+  else if(s==='Đã duyệt (có chỉnh sửa)') cls='st-duyetsua';
+  else if(s==='Đã duyệt') cls='st-duyet';
+  return `<span class="status-badge ${cls}">${s}</span>`;
+}
+
 async function loadKhoaPortalList(){
   const khoa=getKhoaAuthName();
-  document.getElementById('khoaPortalTitle').textContent='Khoa: '+(khoa||'');
+  document.getElementById('khoaPortalTitle').textContent=khoa||'';
   const tbody=document.getElementById('khoaBBListBody');
   const btn=document.getElementById('btnKhoaSync');
+  const statusEl=document.getElementById('khoaSyncStatus');
   if(btn){btn.disabled=true;btn.textContent='⏳ Đang tải…';}
-  await loadOutSheet(true,'raw');
+  if(statusEl){statusEl.textContent='⏳ Đang đồng bộ…';statusEl.style.color='#888';}
+  try{
+    await loadOutSheet(true,'raw');
+    if(statusEl){statusEl.textContent='✅ Đồng bộ thành công lúc '+new Date().toLocaleTimeString('vi-VN');statusEl.style.color='#1e7d52';}
+  }catch(e){
+    if(statusEl){statusEl.textContent='🔴 Đồng bộ lỗi: '+e.message;statusEl.style.color='#c0392b';}
+  }
   if(btn){btn.disabled=false;btn.textContent='🔄 Đồng bộ lại';}
+
   const rows=OUT_DATA_RAW.filter(r=>r[3]===khoa);
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào của khoa.</td></tr>'; return; }
   const groups={}; const order=[];
   rows.forEach(r=>{
     const msbb=r[0]||'';
-    if(!groups[msbb]){ groups[msbb]={msbb,ngayLuu:r[1]||'',ngayBB:r[2]||'',count:0}; order.push(msbb); }
+    if(!groups[msbb]){ groups[msbb]={msbb,ngayLuu:r[1]||'',ngayBB:r[2]||'',count:0,status:(r[33]||'Đã hủy'),audit:parseAuditJson(r[34])}; order.push(msbb); }
     groups[msbb].count++;
+    // Trạng thái mới nhất trong nhóm (phòng khi các dòng khác nhau do dữ liệu cũ) — ưu tiên giá trị không rỗng
+    if(r[33]) groups[msbb].status=r[33];
+    if(r[34]){ const a=parseAuditJson(r[34]); if(a.length>groups[msbb].audit.length) groups[msbb].audit=a; }
   });
   order.reverse(); // mới lưu gần nhất lên đầu
+  _khoaBBGroups=order.map(msbb=>groups[msbb]);
+  renderKhoaBBTable();
+}
+
+function parseDMY_khoa(s){
+  const p=(s||'').split('/');
+  return p.length>=3 ? new Date(+p[2],+p[1]-1,+p[0]) : null;
+}
+
+function renderKhoaBBTable(){
+  const tbody=document.getElementById('khoaBBListBody');
+  if(!tbody) return;
+  if(!_khoaBBGroups.length){ tbody.innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào của khoa.</td></tr>'; return; }
+
+  const fromVal=document.getElementById('khoaFFromDate')?.value;
+  const toVal=document.getElementById('khoaFToDate')?.value;
+  const msbbQ=(document.getElementById('khoaFMsbb')?.value||'').trim().toLowerCase();
+  const statusQ=document.getElementById('khoaFStatus')?.value||'';
+  const fromDate=fromVal?new Date(fromVal):null;
+  const toDate=toVal?new Date(toVal+'T23:59:59'):null;
+
+  const filtered=_khoaBBGroups.filter(g=>{
+    if(msbbQ && !(g.msbb||'').toLowerCase().includes(msbbQ)) return false;
+    if(statusQ && (g.status||'Đã hủy')!==statusQ) return false;
+    if(fromDate||toDate){
+      const d=parseDMY_khoa(g.ngayBB);
+      if(!d) return false;
+      if(fromDate && d<fromDate) return false;
+      if(toDate && d>toDate) return false;
+    }
+    return true;
+  });
+
+  if(!filtered.length){ tbody.innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:#999;">Không có biên bản phù hợp bộ lọc.</td></tr>'; return; }
+
   tbody.innerHTML='';
-  order.forEach((msbb,i)=>{
-    const g=groups[msbb];
+  filtered.forEach((g,i)=>{
     const tr=document.createElement('tr');
     tr.style.borderBottom='1px solid #eee';
+    const msbbEsc=(g.msbb||'').replace(/'/g,"\\'");
     tr.innerHTML=`
       <td style="padding:8px 10px;">${i+1}</td>
       <td style="padding:8px 10px;font-weight:600;">${g.msbb||'—'}</td>
       <td style="padding:8px 10px;">${g.ngayBB||''}</td>
       <td style="padding:8px 10px;">${g.ngayLuu||''}</td>
       <td style="padding:8px 10px;">${g.count}</td>
-      <td style="padding:8px 10px;"><button class="btn btn-gh" style="padding:5px 10px;font-size:12px;" onclick="viewKhoaBienBan('${(g.msbb||'').replace(/'/g,"\\'")}')">👁️ Xem/In</button></td>`;
+      <td style="padding:8px 10px;">${statusBadgeHtml(g.status)}</td>
+      <td style="padding:8px 10px;white-space:nowrap;">
+        <button class="btn btn-gh" style="padding:5px 10px;font-size:12px;" onclick="openKhoaViewModal('${msbbEsc}')">👁️ Xem/In</button>
+        <button class="btn" style="padding:5px 10px;font-size:12px;background:#fdecea;color:#c0392b;margin-left:4px;" onclick="openDeNghiHuyModal('${msbbEsc}')">🚫 Đề nghị hủy</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 }
 
-/* Tái tạo bản xem/in biên bản đã lưu, từ dữ liệu OUT_DATA_RAW theo Mã biên bản */
-function viewKhoaBienBan(msbb){
+/* ── MODAL XEM/IN LẠI BIÊN BẢN ── */
+let _currentModalMsbb='';
+
+function buildKhoaViewHtml(msbb){
   const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb && r[3]===getKhoaAuthName())
     .sort((a,b)=>(parseInt(a[4])||0)-(parseInt(b[4])||0));
-  if(!rows.length){ alert('Không tìm thấy dữ liệu biên bản này.'); return; }
+  if(!rows.length) return null;
   const r0=rows[0];
   const ngayBB=r0[2]||'', khoa=r0[3]||'';
   const dsXN=r0[21]||'', ddHC=r0[22]||'', ldKhoa=r0[23]||'', thoiGian=r0[24]||'';
   const tvNames=[r0[25],r0[26],r0[27],r0[28],r0[29],r0[30]].filter(Boolean);
   const gioKT=r0[31]||'', phutKT=r0[32]||'';
+  const status=r0[33]||'Đã hủy';
+  const audit=parseAuditJson(r0[34]);
+  const reprintNow=new Date().toLocaleString('vi-VN'); // giống cách lấy "Ngày lưu" khi lưu biên bản
 
   let bodyRows='';
   rows.forEach((r,i)=>{
     const nd=r[13]!==''&&r[13]!=null ? `${r[13]} ${r[14]||''}` : '';
-    const tt=r[15]!==''&&r[15]!=null ? `${r[13]||''}/${r[15]} ml` : '';
     bodyRows+=`<tr>
       <td>${i+1}</td>
       <td style="text-align:left;">${r[5]||''}</td>
@@ -1053,7 +1262,7 @@ function viewKhoaBienBan(msbb){
     </tr>`;
   });
 
-  const html=`
+  return `
     <div class="rpt-wrap">
       <div class="rpt-header">
         <div class="rpt-hl"><p class="bold">BỘ Y TẾ</p><p class="bold underline">BỆNH VIỆN NHI TRUNG ƯƠNG</p></div>
@@ -1063,8 +1272,10 @@ function viewKhoaBienBan(msbb){
       <div class="rpt-khoa">
         Mã biên bản: <b>${msbb||'—'}</b> &nbsp;&nbsp;
         Khoa/Trung tâm: <b>${khoa}</b> &nbsp;&nbsp;
-        Ngày biên bản: <b>${ngayBB}</b>
+        Ngày biên bản: <b>${ngayBB}</b> &nbsp;&nbsp;
+        Trạng thái: ${statusBadgeHtml(status)}
       </div>
+      <div class="rpt-reprint-note">🖨️ In lại (${reprintNow})</div>
       <div style="overflow-x:auto;">
         <table class="rpt" style="font-size:11px;">
           <thead>
@@ -1098,17 +1309,91 @@ function viewKhoaBienBan(msbb){
         <b>Thời gian thực hiện:</b> ${thoiGian||'…'} &nbsp;&nbsp;
         <b>Kết thúc lúc:</b> ${gioKT||'…'} giờ ${phutKT||'…'} phút
       </div>
+      <div class="rpt-audit-block" style="margin-top:16px;border-top:1px dashed #ccc;padding-top:12px;">
+        <b style="font-size:12.5px;font-family:Arial,sans-serif;">🕘 Lịch sử thay đổi trạng thái (Audit):</b>
+        <div style="margin-top:6px;">${auditHtml(audit)}</div>
+      </div>
     </div>`;
-  document.getElementById('khoaViewArea').innerHTML=html;
-  go('s-khoa-view');
+}
+
+function openKhoaViewModal(msbb){
+  const html=buildKhoaViewHtml(msbb);
+  if(!html){ alert('Không tìm thấy dữ liệu biên bản này.'); return; }
+  _currentModalMsbb=msbb;
+  document.getElementById('khoaViewModalBody').innerHTML=html;
+  document.getElementById('khoaViewModalOverlay').classList.add('show');
+}
+function closeKhoaViewModal(){
+  document.getElementById('khoaViewModalOverlay').classList.remove('show');
+}
+function printKhoaModal(){
+  // In lại tem thời gian ngay trước khi in, để phản ánh đúng thời điểm bấm nút "In"
+  const html=buildKhoaViewHtml(_currentModalMsbb);
+  if(html) document.getElementById('khoaViewModalBody').innerHTML=html;
+  document.documentElement.classList.add('khoa-modal-open');
+  window.print();
+}
+window.addEventListener('afterprint', ()=>{ document.documentElement.classList.remove('khoa-modal-open'); });
+
+/* ── MODAL ĐỀ NGHỊ HỦY ── */
+function openDeNghiHuyModal(msbb){
+  if(!msbb){ alert('Thiếu mã biên bản.'); return; }
+  _currentModalMsbb=msbb;
+  document.getElementById('deNghiHuyMsbb').textContent=msbb;
+  document.getElementById('deNghiHuyNguoi').value='';
+  document.getElementById('deNghiHuyLyDo').value='';
+  document.getElementById('deNghiHuyErr').classList.remove('show');
+  document.getElementById('deNghiHuyModalOverlay').classList.add('show');
+}
+function closeDeNghiHuyModal(){
+  document.getElementById('deNghiHuyModalOverlay').classList.remove('show');
+}
+async function submitDeNghiHuy(){
+  const msbb=_currentModalMsbb;
+  const nguoi=(document.getElementById('deNghiHuyNguoi').value||'').trim();
+  const lyDo=(document.getElementById('deNghiHuyLyDo').value||'').trim();
+  const errEl=document.getElementById('deNghiHuyErr');
+  if(!nguoi||!lyDo){
+    errEl.textContent='⚠️ Vui lòng nhập đầy đủ tên người đề nghị và lý do hủy.';
+    errEl.classList.add('show');
+    return;
+  }
+  const btn=document.getElementById('btnSubmitDeNghiHuy');
+  const orig=btn.textContent;
+  btn.disabled=true; btn.textContent='⏳ Đang gửi…';
+  const su=localStorage.getItem('scriptUrl');
+  const thoiGianDeNghi=new Date().toLocaleString('vi-VN');
+  const auditEntry={thoiGian:thoiGianDeNghi,hanhDong:'Đề xuất hủy',nguoiThucHien:nguoi,lyDo:lyDo};
+  try{
+    if(su){
+      // Yêu cầu Apps Script hỗ trợ action=proposeHuy — xem ghi chú triển khai backend.
+      // Script cần: tìm các dòng theo msbb, ghi Trạng thái="Đề xuất hủy", và ĐỌC cột Audit hiện có (JSON),
+      // PUSH thêm auditEntry vào mảng đó rồi ghi đè lại (không được xoá lịch sử cũ).
+      await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
+        action:'proposeHuy', msbb, nguoiDeNghi:nguoi, lyDoHuy:lyDo,
+        thoiGian:thoiGianDeNghi, auditEntry
+      })});
+    }
+    // Cập nhật trạng thái + audit tạm thời trên giao diện (chờ đồng bộ lại từ Sheet ở lần tải sau)
+    const g=_khoaBBGroups.find(x=>x.msbb===msbb);
+    if(g){ g.status='Đề xuất hủy'; g.audit=[...(g.audit||[]),auditEntry]; }
+    renderKhoaBBTable();
+    closeDeNghiHuyModal();
+    alert('✅ Đã gửi đề nghị hủy. Trạng thái sẽ được cập nhật đầy đủ sau khi quản trị viên xử lý.');
+  }catch(e){
+    errEl.textContent='🔴 Lỗi gửi đề nghị: '+e.message;
+    errEl.classList.add('show');
+  }finally{
+    btn.disabled=false; btn.textContent=orig;
+  }
 }
 
 /* ── ROUTER ── */
-const SCREENS=['s-home','s-data','s-report','s-form','s-khoa-portal','s-khoa-view'];
-const PUBLIC_SCREENS=['s-form','s-khoa-portal','s-khoa-view']; // Không cần đăng nhập quản trị (khoa dùng cổng đăng nhập riêng)
+const SCREENS=['s-home','s-data','s-report','s-form','s-khoa-portal'];
+const PUBLIC_SCREENS=['s-form','s-khoa-portal']; // Không cần đăng nhập quản trị (khoa dùng cổng đăng nhập riêng)
 function go(id){
   if(!isAuthed() && !PUBLIC_SCREENS.includes(id)){ showLogin('admin'); return; }
-  if((id==='s-khoa-portal'||id==='s-khoa-view') && !isKhoaAuthed()){ showKhoaLogin(); return; }
+  if(id==='s-khoa-portal' && !isKhoaAuthed()){ showKhoaLogin(); return; }
   SCREENS.forEach(s=>document.getElementById(s).classList.remove('active'));
   document.getElementById('s-login').classList.remove('active');
   document.getElementById(id).classList.add('active');
@@ -1339,7 +1624,7 @@ window.addEventListener('beforeprint',()=>{
       prepPrint();
     }
   }
-  if(active==='s-report'||active==='s-khoa-view'){
+  if(active==='s-report'){
     // Inject @page margin boxes: only reliable way to get Trang X/Y across multiple pages
     const bm = active==='s-report' ? 'BM8/QTQL.D.22.1' : 'BM7/QTQL.D.22.1';
     _theoPageStyle=document.createElement('style');
@@ -1829,7 +2114,12 @@ async function saveForm(){
   autoFillMembers(saveDateISO,khoa);
 
   // ── Xây dựng data rows (trong khi GET đang chạy) ──
-  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì của nhà cung cấp','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích nồng độ (ml)','Thể tích cần hủy (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT'];
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì của nhà cung cấp','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích nồng độ (ml)','Thể tích cần hủy (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT','Trạng thái','Audit'];
+  // Audit: chuỗi JSON dạng mảng các mốc thay đổi trạng thái —
+  // [{"thoiGian":"...","hanhDong":"Tạo biên bản","nguoiThucHien":"<khoa>","lyDo":""}]
+  // Mỗi khi trạng thái thay đổi (vd. "Đề nghị hủy", "Đã duyệt"...), Apps Script cần ĐỌC giá trị JSON hiện có,
+  // PUSH thêm 1 phần tử mới vào mảng rồi ghi đè lại — không ghi đè mất lịch sử cũ.
+  const auditInit=JSON.stringify([{thoiGian:now,hanhDong:'Tạo biên bản (Đã hủy)',nguoiThucHien:khoa,lyDo:''}]);
   const dr=[];
   rows.forEach((tr,i)=>{
     const tds=[...tr.querySelectorAll('td')];
@@ -1860,7 +2150,9 @@ async function saveForm(){
       i===0?document.getElementById('thoiGian')?.value||'':'',
       ...(i===0?[...document.querySelectorAll('.tv')].map(el=>el.value||''):Array(6).fill('')),
       i===0?document.getElementById('gioKT')?.value||'':'',
-      i===0?document.getElementById('phutKT')?.value||'':'']);
+      i===0?document.getElementById('phutKT')?.value||'':'',
+      'Đã hủy',
+      auditInit]);
   });
 
   // ── Đợi barcode từ server (thường đã xong rồi vì chạy song song) ──
