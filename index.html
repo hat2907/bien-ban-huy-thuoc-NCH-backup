@@ -287,9 +287,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 
 .status-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:Arial,sans-serif;white-space:nowrap;}
 .status-badge.st-huy{background:#e8f0fe;color:#1a4d8f;}
+.status-badge.st-choduyet{background:#eceff1;color:#455a64;}
 .status-badge.st-dexuat{background:#fff3cd;color:#8a6d00;}
 .status-badge.st-duyet{background:#e3f7e9;color:#1e7d52;}
 .status-badge.st-duyetsua{background:#eee3ff;color:#5a2ea6;}
+.status-badge.st-pending{outline:1.5px dashed #999;outline-offset:1px;}
 
 /* ── PRINT ── */
 @media print{
@@ -468,10 +470,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <select id="khoaFStatus" onchange="renderKhoaBBTable()"
             style="padding:7px 10px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;background:#fff;min-width:150px;">
             <option value="">-- Tất cả --</option>
-            <option value="Đã hủy">Đã hủy</option>
+            <option value="Chờ duyệt">Chờ duyệt</option>
             <option value="Đề xuất">Đề xuất</option>
             <option value="Đã duyệt">Đã duyệt</option>
             <option value="Đã duyệt (có chỉnh sửa)">Đã duyệt (có chỉnh sửa)</option>
+            <option value="Đã hủy">Đã hủy</option>
           </select>
         </label>
       </div>
@@ -756,18 +759,24 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     </div>
     <div class="acard">
       <h2>Danh sách biên bản đang xử lý</h2>
-      <div style="overflow-x:auto;">
+      <div class="desc">Chọn thao tác (Duyệt / Duyệt có chỉnh sửa / Hủy) cho từng biên bản — các lựa chọn này chỉ được <b>ghi nhận tạm trên giao diện</b>. Bấm "✅ Duyệt toàn bộ" bên dưới để cập nhật tất cả lên Google Sheet cùng lúc.</div>
+      <div style="margin:10px 0 4px;">
+        <button class="btn" style="background:#1e7d52;color:#fff;font-weight:700;" onclick="reviewApproveAll()" id="btnReviewApproveAll">✅ Duyệt toàn bộ danh sách</button>
+        <span id="reviewApproveAllStatus" style="font-size:12px;color:#888;font-family:Arial,sans-serif;margin-left:10px;"></span>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px;">
         <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
           <thead>
             <tr style="background:#f0f4fa;text-align:left;">
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;width:26px;"></th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Mã biên bản</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Khoa/Trung tâm</th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Ngày biên bản</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Trạng thái</th>
               <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Thao tác</th>
             </tr>
           </thead>
-          <tbody id="reviewListBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr></tbody>
+          <tbody id="reviewListBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -951,7 +960,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -1180,9 +1189,10 @@ function auditHtml(audit){
 }
 
 function statusBadgeHtml(status){
-  const s=status||'Đã hủy';
+  const s=status||'Chờ duyệt';
   let cls='st-huy';
-  if(s==='Đề xuất') cls='st-dexuat';
+  if(s==='Chờ duyệt') cls='st-choduyet';
+  else if(s==='Đề xuất') cls='st-dexuat';
   else if(s==='Đã duyệt (có chỉnh sửa)') cls='st-duyetsua';
   else if(s==='Đã duyệt') cls='st-duyet';
   return `<span class="status-badge ${cls}">${s}</span>`;
@@ -1208,7 +1218,7 @@ async function loadKhoaPortalList(){
   const groups={}; const order=[];
   rows.forEach(r=>{
     const msbb=r[0]||'';
-    if(!groups[msbb]){ groups[msbb]={msbb,ngayLuu:r[1]||'',ngayBB:r[2]||'',count:0,status:(r[33]||'Đã hủy'),audit:parseAuditJson(r[34])}; order.push(msbb); }
+    if(!groups[msbb]){ groups[msbb]={msbb,ngayLuu:r[1]||'',ngayBB:r[2]||'',count:0,status:(r[33]||'Chờ duyệt'),audit:parseAuditJson(r[34])}; order.push(msbb); }
     groups[msbb].count++;
     // Trạng thái mới nhất trong nhóm (phòng khi các dòng khác nhau do dữ liệu cũ) — ưu tiên giá trị không rỗng
     if(r[33]) groups[msbb].status=r[33];
@@ -1238,7 +1248,7 @@ function renderKhoaBBTable(){
 
   const filtered=_khoaBBGroups.filter(g=>{
     if(msbbQ && !(g.msbb||'').toLowerCase().includes(msbbQ)) return false;
-    if(statusQ && (g.status||'Đã hủy')!==statusQ) return false;
+    if(statusQ && (g.status||'Chờ duyệt')!==statusQ) return false;
     if(fromDate||toDate){
       const d=parseDMY_khoa(g.ngayBB);
       if(!d) return false;
@@ -1312,7 +1322,7 @@ function buildKhoaReprintHtml(msbb){
   const dsXN=r0[21]||'', ddHC=r0[22]||'', ldKhoa=r0[23]||'', thoiGian=r0[24]||'';
   const tv=[r0[25]||'',r0[26]||'',r0[27]||'',r0[28]||'',r0[29]||'',r0[30]||''];
   const gioKT=r0[31]||'', phutKT=r0[32]||'';
-  const status=r0[33]||'Đã hủy';
+  const status=r0[33]||'Chờ duyệt';
   const audit=parseAuditJson(r0[34]);
   const reprintNow=new Date().toLocaleString('vi-VN'); // giống cách lấy "Ngày lưu" khi lưu biên bản
   const nDD=parseNgayVN_(ngayBB);
@@ -1561,7 +1571,7 @@ async function submitDeNghiHuy(){
 }
 
 /* ── DUYỆT BIÊN BẢN (VAI TRÒ HỘI ĐỒNG HỦY THUỐC) ── */
-let _reviewMsbbList=[]; // [{msbb, khoa, status, rows:[[...]], expanded, _edited}]
+let _reviewMsbbList=[]; // [{msbb, khoa, ngayBB, status, rows:[[...]], expanded, _edited, pending:null|{newStatus,editedRows,auditEntry}}]
 
 async function importReviewMsbb(){
   const inp=document.getElementById('reviewMsbbInput');
@@ -1576,9 +1586,10 @@ async function importReviewMsbb(){
     await loadOutSheet(true,'raw');
     const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb).sort((a,b)=>(parseInt(a[4])||0)-(parseInt(b[4])||0));
     if(!rows.length){ errEl.textContent='🔴 Không tìm thấy biên bản với mã này trong CSDL thô.'; errEl.classList.add('show'); return; }
-    const status=rows[0][33]||'Đã hủy';
+    const status=rows[0][33]||'Chờ duyệt';
     const khoa=rows[0][3]||'';
-    _reviewMsbbList.unshift({msbb,khoa,status,rows:rows.map(r=>r.slice()),expanded:true,_edited:false});
+    const ngayBB=rows[0][2]||'';
+    _reviewMsbbList.unshift({msbb,khoa,ngayBB,status,rows:rows.map(r=>r.slice()),expanded:true,_edited:false,pending:null});
     inp.value='';
     renderReviewList();
   }finally{
@@ -1608,16 +1619,20 @@ const REVIEW_COLS=[
 
 function renderReviewList(){
   const tbody=document.getElementById('reviewListBody');
-  if(!_reviewMsbbList.length){ tbody.innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr>'; return; }
+  if(!_reviewMsbbList.length){ tbody.innerHTML='<tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr>'; return; }
   tbody.innerHTML='';
   _reviewMsbbList.forEach((item,idx)=>{
     const tr=document.createElement('tr');
     tr.style.borderBottom='1px solid #eee';
+    const pendingLabel = item.pending
+      ? `<span class="status-badge st-pending" style="margin-left:6px;background:#fff;color:#555;">⏳ Sẽ chuyển: ${item.pending.newStatus}</span>`
+      : '';
     tr.innerHTML=`
       <td style="padding:8px 10px;cursor:pointer;text-align:center;" onclick="toggleReviewExpand(${idx})">${item.expanded?'▼':'▶'}</td>
       <td style="padding:8px 10px;font-weight:600;cursor:pointer;" onclick="toggleReviewExpand(${idx})">${item.msbb}${item._edited?' <span style="color:#c0392b;font-weight:400;font-size:11px;">(đã chỉnh sửa)</span>':''}</td>
       <td style="padding:8px 10px;">${item.khoa}</td>
-      <td style="padding:8px 10px;">${statusBadgeHtml(item.status)}</td>
+      <td style="padding:8px 10px;">${item.ngayBB||''}</td>
+      <td style="padding:8px 10px;">${statusBadgeHtml(item.status)}${pendingLabel}</td>
       <td style="padding:8px 10px;white-space:nowrap;">
         <button class="btn" style="padding:5px 9px;font-size:12px;background:#e3f7e9;color:#1e7d52;" onclick="reviewAction(${idx},'Đã duyệt')">✅ Duyệt</button>
         <button class="btn" style="padding:5px 9px;font-size:12px;background:#eee3ff;color:#5a2ea6;margin-left:4px;" onclick="reviewAction(${idx},'Đã duyệt (có chỉnh sửa)')">✏️ Duyệt (có chỉnh sửa)</button>
@@ -1627,7 +1642,7 @@ function renderReviewList(){
     tbody.appendChild(tr);
     if(item.expanded){
       const trX=document.createElement('tr');
-      trX.innerHTML=`<td colspan="5" style="padding:0;background:#fafbfc;">${buildReviewEditTable(item,idx)}</td>`;
+      trX.innerHTML=`<td colspan="6" style="padding:0;background:#fafbfc;">${buildReviewEditTable(item,idx)}</td>`;
       tbody.appendChild(trX);
     }
   });
@@ -1665,7 +1680,9 @@ function onReviewCellEdit(itemIdx,rowIdx,colIdx,newVal){
   renderReviewList();
 }
 
-async function reviewAction(idx,newStatus){
+/* Bấm Duyệt/Duyệt (có chỉnh sửa)/Hủy CHỈ ghi nhận TẠM trên giao diện — không gửi lên Google Sheet.
+   Dữ liệu chỉ thực sự được ghi khi bấm "✅ Duyệt toàn bộ danh sách". */
+function reviewAction(idx,newStatus){
   const item=_reviewMsbbList[idx];
   const nguoi = LOGIN_USER || 'Quản trị viên';
   let lyDo='';
@@ -1679,39 +1696,59 @@ async function reviewAction(idx,newStatus){
     nguoiThucHien:nguoi,
     lyDo,
   };
-  const su=localStorage.getItem('scriptUrl');
-  const editedRows = newStatus==='Đã duyệt (có chỉnh sửa)' ? item.rows : null;
-  const btnRow=event?.target;
-  if(btnRow) btnRow.disabled=true;
-  try{
-    if(su){
-      // Yêu cầu Apps Script hỗ trợ action=reviewBienBan — xem ghi chú triển khai backend trong Code.gs.
-      await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
-        action:'reviewBienBan', msbb:item.msbb, newStatus, editedRows, auditEntry
-      })});
-    }
-    item.status=newStatus;
-    item._edited=false;
-    // Vá luôn OUT_DATA_RAW để các màn khác (danh sách khoa, popup xem/in) phản ánh đúng ngay lập tức
-    OUT_DATA_RAW.forEach(r=>{
-      if(r[0]===item.msbb){
-        r[33]=newStatus;
-        try{ const arr=r[34]?JSON.parse(r[34]):[]; arr.push(auditEntry); r[34]=JSON.stringify(arr); }
-        catch(e){ r[34]=JSON.stringify([auditEntry]); }
-        if(editedRows){
-          const stt=parseInt(r[4])||0;
-          const matched=editedRows.find(er=>(parseInt(er[4])||0)===stt);
-          if(matched){ for(let c=5;c<=20;c++) r[c]=matched[c]; }
-        }
-      }
-    });
-    renderReviewList();
-    alert(`✅ Đã cập nhật trạng thái "${newStatus}" cho biên bản ${item.msbb}.`);
-  }catch(e){
-    alert('🔴 Lỗi cập nhật: '+e.message);
-  }finally{
-    if(btnRow) btnRow.disabled=false;
+  const editedRows = newStatus==='Đã duyệt (có chỉnh sửa)' ? item.rows.map(r=>r.slice()) : null;
+  item.pending={newStatus,editedRows,auditEntry};
+  renderReviewList();
+}
+
+/* "Duyệt toàn bộ danh sách" — GỬI TẤT CẢ các biên bản đang có lựa chọn (pending) lên Google Sheet
+   trong 1 lượt, sau đó XOÁ TOÀN BỘ danh sách khỏi giao diện (kể cả các dòng chưa chọn thao tác). */
+async function reviewApproveAll(){
+  if(!_reviewMsbbList.length){ alert('Danh sách đang trống.'); return; }
+  const pendingItems=_reviewMsbbList.filter(it=>it.pending);
+  if(!pendingItems.length){
+    alert('⚠️ Chưa có biên bản nào được chọn thao tác (Duyệt/Duyệt có chỉnh sửa/Hủy).');
+    return;
   }
+  if(!confirm(`Xác nhận cập nhật trạng thái cho ${pendingItems.length} biên bản lên Google Sheet?\nSau khi hoàn tất, danh sách trên giao diện sẽ được xoá.`)) return;
+
+  const btn=document.getElementById('btnReviewApproveAll');
+  const statusEl=document.getElementById('reviewApproveAllStatus');
+  btn.disabled=true;
+  const su=localStorage.getItem('scriptUrl');
+  let done=0;
+  for(const item of pendingItems){
+    done++;
+    if(statusEl) statusEl.textContent=`⏳ Đang cập nhật ${done}/${pendingItems.length} (${item.msbb})…`;
+    const {newStatus,editedRows,auditEntry}=item.pending;
+    try{
+      if(su){
+        await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
+          action:'reviewBienBan', msbb:item.msbb, newStatus, editedRows, auditEntry
+        })});
+      }
+      // Vá luôn OUT_DATA_RAW để các màn khác (danh sách khoa, popup xem/in) phản ánh đúng ngay lập tức
+      OUT_DATA_RAW.forEach(r=>{
+        if(r[0]===item.msbb){
+          r[33]=newStatus;
+          try{ const arr=r[34]?JSON.parse(r[34]):[]; arr.push(auditEntry); r[34]=JSON.stringify(arr); }
+          catch(e){ r[34]=JSON.stringify([auditEntry]); }
+          if(editedRows){
+            const stt=parseInt(r[4])||0;
+            const matched=editedRows.find(er=>(parseInt(er[4])||0)===stt);
+            if(matched){ for(let c=5;c<=20;c++) r[c]=matched[c]; }
+          }
+        }
+      });
+    }catch(e){
+      console.error('Lỗi cập nhật biên bản '+item.msbb+':', e);
+    }
+  }
+  if(statusEl) statusEl.textContent=`✅ Đã cập nhật ${pendingItems.length} biên bản lúc ${new Date().toLocaleTimeString('vi-VN')}.`;
+  btn.disabled=false;
+  // Clear toàn bộ danh sách trên giao diện (kể cả biên bản chưa chọn thao tác) theo đúng yêu cầu
+  _reviewMsbbList=[];
+  renderReviewList();
 }
 
 /* ── ROUTER ── */
@@ -2452,7 +2489,7 @@ async function saveForm(){
   // [{"thoiGian":"...","hanhDong":"Tạo biên bản","nguoiThucHien":"<khoa>","lyDo":""}]
   // Mỗi khi trạng thái thay đổi (vd. "Đề nghị hủy", "Đã duyệt"...), Apps Script cần ĐỌC giá trị JSON hiện có,
   // PUSH thêm 1 phần tử mới vào mảng rồi ghi đè lại — không ghi đè mất lịch sử cũ.
-  const auditInit=JSON.stringify([{thoiGian:now,hanhDong:'Tạo biên bản (Đã hủy)',nguoiThucHien:khoa,lyDo:''}]);
+  const auditInit=JSON.stringify([{thoiGian:now,hanhDong:'Tạo biên bản (Chờ duyệt)',nguoiThucHien:khoa,lyDo:''}]);
   const dr=[];
   rows.forEach((tr,i)=>{
     const tds=[...tr.querySelectorAll('td')];
@@ -2484,7 +2521,7 @@ async function saveForm(){
       ...(i===0?[...document.querySelectorAll('.tv')].map(el=>el.value||''):Array(6).fill('')),
       i===0?document.getElementById('gioKT')?.value||'':'',
       i===0?document.getElementById('phutKT')?.value||'':'',
-      'Đã hủy',
+      'Chờ duyệt',
       auditInit]);
   });
 
