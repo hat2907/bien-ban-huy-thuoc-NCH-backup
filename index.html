@@ -363,7 +363,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
      Dùng lại data-ps=s-form để tái sử dụng TOÀN BỘ style in ấn gốc của biên bản (.page, table.main, …)
      nhưng phải ẩn hẳn #s-form THẬT (form đang sống) đi, chỉ hiện nội dung trong modal. */
   .khoa-modal-open .scr{display:none!important;}
-  body.khoa-modal-open #s-form{display:none!important;}
+  html.khoa-modal-open #s-form{display:none!important;}
   .khoa-modal-open #khoaViewModalOverlay{position:static!important;background:none!important;padding:0!important;display:block!important;}
   .khoa-modal-open .modal-topbar,.khoa-modal-open .modal-close-x{display:none!important;}
   .khoa-modal-open .modal-box{box-shadow:none!important;max-width:none!important;border-radius:0!important;}
@@ -960,7 +960,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -1518,6 +1518,22 @@ function openDeNghiHuyModal(msbb){
 function closeDeNghiHuyModal(){
   document.getElementById('deNghiHuyModalOverlay').classList.remove('show');
 }
+/* Gửi dữ liệu lên Apps Script và ĐỌC ĐƯỢC kết quả thật (không dùng mode:'no-cors' nữa) —
+   trước đây dùng no-cors nên request có thể gửi đi nhưng KHÔNG BIẾT được là Apps Script
+   có xử lý thành công hay không, dẫn tới các trường hợp "đã bấm nhưng Sheet không cập nhật"
+   mà không ai phát hiện ra. Giờ luôn đọc JSON phản hồi để biết chắc chắn đã ghi vào Sheet chưa. */
+async function postToScript_(payload){
+  const su=localStorage.getItem('scriptUrl');
+  if(!su) return {status:'error', message:'Chưa cấu hình URL Apps Script (vào Trang chủ → Dữ liệu & Cấu hình).'};
+  try{
+    const res=await fetch(su,{method:'POST',body:JSON.stringify(payload)});
+    const data=await res.json();
+    return data;
+  }catch(e){
+    return {status:'error', message:'Không đọc được phản hồi từ Apps Script: '+e.message+'. Kiểm tra lại đã Deploy Web app (Execute as: Me, Who has access: Anyone) và URL cấu hình đúng chưa.'};
+  }
+}
+
 async function submitDeNghiHuy(){
   const msbb=_currentModalMsbb;
   const nguoi=(document.getElementById('deNghiHuyNguoi').value||'').trim();
@@ -1531,20 +1547,20 @@ async function submitDeNghiHuy(){
   const btn=document.getElementById('btnSubmitDeNghiHuy');
   const orig=btn.textContent;
   btn.disabled=true; btn.textContent='⏳ Đang gửi…';
-  const su=localStorage.getItem('scriptUrl');
   const thoiGianDeNghi=new Date().toLocaleString('vi-VN');
   const auditEntry={thoiGian:thoiGianDeNghi,hanhDong:'Đề xuất hủy',nguoiThucHien:nguoi,lyDo:lyDo};
   try{
-    if(su){
-      // Yêu cầu Apps Script hỗ trợ action=proposeHuy — xem ghi chú triển khai backend.
-      // Script cần: tìm các dòng theo msbb, ghi Trạng thái="Đề xuất", và ĐỌC cột Audit hiện có (JSON),
-      // PUSH thêm auditEntry vào mảng đó rồi ghi đè lại (không được xoá lịch sử cũ).
-      await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
-        action:'proposeHuy', msbb, nguoiDeNghi:nguoi, lyDoHuy:lyDo,
-        thoiGian:thoiGianDeNghi, auditEntry
-      })});
+    // Ghi thẳng vào Google Sheet (Trạng thái="Đề xuất" + push audit) — action=proposeHuy trong Code.gs
+    const result=await postToScript_({
+      action:'proposeHuy', msbb, nguoiDeNghi:nguoi, lyDoHuy:lyDo,
+      thoiGian:thoiGianDeNghi, auditEntry
+    });
+    if(result.status!=='ok'){
+      errEl.textContent='🔴 Chưa ghi được lên Google Sheet: '+(result.message||'Lỗi không xác định.');
+      errEl.classList.add('show');
+      return; // Không cập nhật giao diện nếu ghi Sheet thất bại — tránh hiểu lầm đã lưu thành công
     }
-    // Cập nhật trạng thái + audit tạm thời trên giao diện (chờ đồng bộ lại từ Sheet ở lần tải sau)
+    // Ghi Sheet thành công → mới cập nhật hiển thị trên giao diện
     const g=_khoaBBGroups.find(x=>x.msbb===msbb);
     if(g){ g.status='Đề xuất'; g.audit=[...(g.audit||[]),auditEntry]; }
     // Vá luôn dữ liệu gốc OUT_DATA_RAW để popup Xem/In (đọc trực tiếp từ đây) phản ánh đúng ngay,
@@ -1561,7 +1577,7 @@ async function submitDeNghiHuy(){
     });
     renderKhoaBBTable();
     closeDeNghiHuyModal();
-    alert('✅ Đã gửi đề nghị hủy. Trạng thái sẽ được cập nhật đầy đủ sau khi quản trị viên xử lý.');
+    alert('✅ Đã gửi đề nghị hủy và ghi nhận vào Google Sheet.');
   }catch(e){
     errEl.textContent='🔴 Lỗi gửi đề nghị: '+e.message;
     errEl.classList.add('show');
@@ -1627,12 +1643,15 @@ function renderReviewList(){
     const pendingLabel = item.pending
       ? `<span class="status-badge st-pending" style="margin-left:6px;background:#fff;color:#555;">⏳ Sẽ chuyển: ${item.pending.newStatus}</span>`
       : '';
+    const errLabel = item._lastError
+      ? `<div style="color:#c0392b;font-size:11px;margin-top:4px;">🔴 Lỗi lần trước: ${item._lastError}</div>`
+      : '';
     tr.innerHTML=`
       <td style="padding:8px 10px;cursor:pointer;text-align:center;" onclick="toggleReviewExpand(${idx})">${item.expanded?'▼':'▶'}</td>
       <td style="padding:8px 10px;font-weight:600;cursor:pointer;" onclick="toggleReviewExpand(${idx})">${item.msbb}${item._edited?' <span style="color:#c0392b;font-weight:400;font-size:11px;">(đã chỉnh sửa)</span>':''}</td>
       <td style="padding:8px 10px;">${item.khoa}</td>
       <td style="padding:8px 10px;">${item.ngayBB||''}</td>
-      <td style="padding:8px 10px;">${statusBadgeHtml(item.status)}${pendingLabel}</td>
+      <td style="padding:8px 10px;">${statusBadgeHtml(item.status)}${pendingLabel}${errLabel}</td>
       <td style="padding:8px 10px;white-space:nowrap;">
         <button class="btn" style="padding:5px 9px;font-size:12px;background:#e3f7e9;color:#1e7d52;" onclick="reviewAction(${idx},'Đã duyệt')">✅ Duyệt</button>
         <button class="btn" style="padding:5px 9px;font-size:12px;background:#eee3ff;color:#5a2ea6;margin-left:4px;" onclick="reviewAction(${idx},'Đã duyệt (có chỉnh sửa)')">✏️ Duyệt (có chỉnh sửa)</button>
@@ -1710,23 +1729,24 @@ async function reviewApproveAll(){
     alert('⚠️ Chưa có biên bản nào được chọn thao tác (Duyệt/Duyệt có chỉnh sửa/Hủy).');
     return;
   }
-  if(!confirm(`Xác nhận cập nhật trạng thái cho ${pendingItems.length} biên bản lên Google Sheet?\nSau khi hoàn tất, danh sách trên giao diện sẽ được xoá.`)) return;
+  if(!confirm(`Xác nhận cập nhật trạng thái cho ${pendingItems.length} biên bản lên Google Sheet?\nSau khi hoàn tất, các biên bản cập nhật thành công sẽ được xoá khỏi danh sách.`)) return;
 
   const btn=document.getElementById('btnReviewApproveAll');
   const statusEl=document.getElementById('reviewApproveAllStatus');
   btn.disabled=true;
-  const su=localStorage.getItem('scriptUrl');
-  let done=0;
+  let done=0, okCount=0, failCount=0;
+  const failedMsbbs=[];
   for(const item of pendingItems){
     done++;
     if(statusEl) statusEl.textContent=`⏳ Đang cập nhật ${done}/${pendingItems.length} (${item.msbb})…`;
     const {newStatus,editedRows,auditEntry}=item.pending;
-    try{
-      if(su){
-        await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
-          action:'reviewBienBan', msbb:item.msbb, newStatus, editedRows, auditEntry
-        })});
-      }
+    // Ghi trực tiếp vào Google Sheet — đọc phản hồi thật để biết chắc có ghi thành công hay không
+    const result=await postToScript_({
+      action:'reviewBienBan', msbb:item.msbb, newStatus, editedRows, auditEntry
+    });
+    if(result.status==='ok'){
+      okCount++;
+      item._committed=true;
       // Vá luôn OUT_DATA_RAW để các màn khác (danh sách khoa, popup xem/in) phản ánh đúng ngay lập tức
       OUT_DATA_RAW.forEach(r=>{
         if(r[0]===item.msbb){
@@ -1740,14 +1760,23 @@ async function reviewApproveAll(){
           }
         }
       });
-    }catch(e){
-      console.error('Lỗi cập nhật biên bản '+item.msbb+':', e);
+    }else{
+      failCount++;
+      failedMsbbs.push(item.msbb);
+      item.status=item.status; // giữ nguyên, không đổi hiển thị vì chưa ghi được
+      item.pending=null; // reset lựa chọn để tránh gửi lại y hệt lỗi cũ, admin có thể chọn lại thao tác
+      item._lastError=result.message||'Lỗi không xác định.';
     }
   }
-  if(statusEl) statusEl.textContent=`✅ Đã cập nhật ${pendingItems.length} biên bản lúc ${new Date().toLocaleTimeString('vi-VN')}.`;
+  if(statusEl){
+    statusEl.textContent = failCount
+      ? `⚠️ Đã ghi thành công ${okCount}/${pendingItems.length} biên bản. ${failCount} biên bản LỖI (${failedMsbbs.join(', ')}) — xem chi tiết lỗi ngay tại từng dòng.`
+      : `✅ Đã ghi thành công ${okCount} biên bản lên Google Sheet lúc ${new Date().toLocaleTimeString('vi-VN')}.`;
+    statusEl.style.color = failCount ? '#c0392b' : '#1e7d52';
+  }
   btn.disabled=false;
-  // Clear toàn bộ danh sách trên giao diện (kể cả biên bản chưa chọn thao tác) theo đúng yêu cầu
-  _reviewMsbbList=[];
+  // Chỉ xoá khỏi danh sách những biên bản đã GHI THÀNH CÔNG lên Sheet; biên bản lỗi vẫn giữ lại để xử lý lại
+  _reviewMsbbList=_reviewMsbbList.filter(it=>!it._committed);
   renderReviewList();
 }
 
