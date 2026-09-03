@@ -130,6 +130,7 @@ td input:focus{outline:1px solid var(--ac);background:#eef5fc;}
 .barcode-area.show{display:block;}
 .barcode-area .bc-svg{display:block;}
 .barcode-area .msbb{font-family:"Courier New",Courier,monospace;font-size:7px;letter-spacing:0;margin-top:1px;white-space:nowrap;}
+.reprint-stamp{font-family:Arial,sans-serif;font-size:8px;color:#c0392b;font-style:italic;margin-top:2px;white-space:nowrap;}
 .page{position:relative;}
 /* Editable date inputs on page 1 */
 .date-inp{border:none;border-bottom:1px dotted var(--hi);background:transparent;font-family:inherit;font-size:inherit;font-style:italic;text-align:center;padding:0;width:auto;-moz-appearance:textfield;}
@@ -356,8 +357,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   body[data-ps=s-report] #rptArea{display:block!important;}
   body[data-ps=s-report] .rpt-wrap{box-shadow:none;padding:0;}
   body[data-ps=s-report] table.rpt input{border:none!important;}
-  /* Modal xem/in lại biên bản khoa — in trực tiếp từ popup, không qua màn hình riêng */
+  /* Modal xem/in lại biên bản khoa — in trực tiếp từ popup, không qua màn hình riêng.
+     Dùng lại data-ps=s-form để tái sử dụng TOÀN BỘ style in ấn gốc của biên bản (.page, table.main, …)
+     nhưng phải ẩn hẳn #s-form THẬT (form đang sống) đi, chỉ hiện nội dung trong modal. */
   .khoa-modal-open .scr{display:none!important;}
+  body.khoa-modal-open #s-form{display:none!important;}
   .khoa-modal-open #khoaViewModalOverlay{position:static!important;background:none!important;padding:0!important;display:block!important;}
   .khoa-modal-open .modal-topbar,.khoa-modal-open .modal-close-x{display:none!important;}
   .khoa-modal-open .modal-box{box-shadow:none!important;max-width:none!important;border-radius:0!important;}
@@ -465,7 +469,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
             style="padding:7px 10px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;background:#fff;min-width:150px;">
             <option value="">-- Tất cả --</option>
             <option value="Đã hủy">Đã hủy</option>
-            <option value="Đề xuất hủy">Đề xuất hủy</option>
+            <option value="Đề xuất">Đề xuất</option>
             <option value="Đã duyệt">Đã duyệt</option>
             <option value="Đã duyệt (có chỉnh sửa)">Đã duyệt (có chỉnh sửa)</option>
           </select>
@@ -547,7 +551,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       </div>
       <div id="configStatus" class="sbadge">⚪ Đang tải…</div>
     </div>
-    <div class="tiles" style="grid-template-columns:1fr 1fr;">
+    <div class="tiles" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="tile" onclick="go('s-data')">
         <div class="icon">💾</div>
         <h3>Dữ liệu &amp; Cấu hình</h3>
@@ -557,6 +561,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
         <div class="icon">📊</div>
         <h3>Báo cáo theo dõi cấp phát</h3>
         <p>Tạo báo cáo BM8 từ CSDL thô hoặc CSDL làm sạch, in / xuất Excel</p>
+      </div>
+      <div class="tile" onclick="go('s-review')">
+        <div class="icon">✅</div>
+        <h3>Duyệt biên bản hủy thuốc</h3>
+        <p>Tra cứu theo Mã biên bản, xem chi tiết và duyệt / duyệt có chỉnh sửa / hủy</p>
       </div>
     </div><!-- /tiles -->
     <p class="form-hint">Link dành cho khoa/phòng (chỉ nhập liệu): <code id="formLink"></code></p>
@@ -722,6 +731,44 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
             <div class="s-block"><p class="role">Người tổng kết</p><p class="hint">(Ký, ghi rõ họ và tên)</p><div style="height:60px;"></div></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ S-REVIEW (Duyệt biên bản — vai trò Hội đồng hủy thuốc) ══════════ -->
+<div class="scr" id="s-review">
+  <div class="adm-hdr"><div class="hosp">Bệnh viện Nhi Trung ương — Hội đồng hủy thuốc</div><h1>Hệ thống biên bản hủy bao bì TXTT</h1></div>
+  <div class="back-bar">
+    <button class="back-btn" onclick="go('s-home')">← Trang chủ</button>
+    <span class="pg-title">✅ Duyệt biên bản hủy thuốc</span>
+  </div>
+  <div class="adm-body" style="max-width:1200px;">
+    <div class="acard">
+      <h2>Tra cứu biên bản theo mã</h2>
+      <div class="desc">Nhập Mã biên bản (MSBB) để nhập vào bảng bên dưới, xem chi tiết các dòng thuốc và xử lý duyệt/hủy.</div>
+      <div class="rg">
+        <input type="text" id="reviewMsbbInput" placeholder="Nhập Mã biên bản (MSBB)…" onkeydown="if(event.key==='Enter')importReviewMsbb();"
+          style="flex:1;padding:9px 12px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;">
+        <button class="btn btn-p" onclick="importReviewMsbb()" id="btnReviewImport">📥 Nhập vào bảng</button>
+      </div>
+      <div id="reviewErr" class="login-err" style="margin-top:10px;"></div>
+    </div>
+    <div class="acard">
+      <h2>Danh sách biên bản đang xử lý</h2>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
+          <thead>
+            <tr style="background:#f0f4fa;text-align:left;">
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;width:26px;"></th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Mã biên bản</th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Khoa/Trung tâm</th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Trạng thái</th>
+              <th style="padding:8px 10px;border-bottom:2px solid #d0d5dd;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="reviewListBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -904,7 +951,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS55oSh_Hw93MBMkyD5c-UoQnsIaYWF4WXZglbHGfHk4EKd7nlGO60ODw1YIVM0F2pnm1M2thttF-Xs/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -1135,7 +1182,7 @@ function auditHtml(audit){
 function statusBadgeHtml(status){
   const s=status||'Đã hủy';
   let cls='st-huy';
-  if(s==='Đề xuất hủy') cls='st-dexuat';
+  if(s==='Đề xuất') cls='st-dexuat';
   else if(s==='Đã duyệt (có chỉnh sửa)') cls='st-duyetsua';
   else if(s==='Đã duyệt') cls='st-duyet';
   return `<span class="status-badge ${cls}">${s}</span>`;
@@ -1223,117 +1270,230 @@ function renderKhoaBBTable(){
   });
 }
 
-/* ── MODAL XEM/IN LẠI BIÊN BẢN ── */
+/* ── MODAL XEM/IN LẠI BIÊN BẢN — tái dựng Y HỆT dàn trang biên bản gốc (2 trang) + mã vạch thật ── */
 let _currentModalMsbb='';
 
-function buildKhoaViewHtml(msbb){
-  const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb && r[3]===getKhoaAuthName())
+const REPRINT_MAIN_THEAD=`<thead>
+  <tr>
+    <th rowspan="2" class="stt-col">STT</th>
+    <th rowspan="2" style="width:100px;">Tên hoạt chất</th>
+    <th rowspan="2" style="width:110px;">Tên thuốc</th>
+    <th rowspan="2" style="width:88px;">Nồng độ/hàm lượng</th>
+    <th rowspan="2" style="width:76px;">Số lô</th>
+    <th rowspan="2" style="width:70px;">Đơn vị tính (ĐVT)</th>
+    <th rowspan="2" style="width:65px;">Số lượng bao bì của nhà cung cấp</th>
+    <th colspan="7" class="gn-ht-tc">Tình trạng thuốc GN-HT-TC không sử dụng hết</th>
+    <th rowspan="2" style="width:58px;">Dược sĩ xác nhận (***)</th>
+    <th rowspan="2" style="width:60px;">Thực hủy<br><i>(****)</i></th>
+    <th rowspan="2" class="row-act"></th>
+  </tr>
+  <tr>
+    <th class="gn-ht-tc" style="width:76px;">Bao bì chứa thuốc</th>
+    <th class="gn-ht-tc" style="width:82px;">Dịch truyền pha 1 ĐVT thuốc (*)</th>
+    <th class="gn-ht-tc" style="width:96px;">Nồng độ thuốc GN-HT-TC không sử dụng hết</th>
+    <th class="gn-ht-tc" style="width:65px;">Thể tích cần hủy (ml)</th>
+    <th class="gn-ht-tc" style="width:70px;">Tỷ lệ thuốc còn lại trên đơn vị tính (**)</th>
+    <th class="gn-ht-tc" style="width:70px;">Điều dưỡng thực hiện y lệnh cuối<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
+    <th class="gn-ht-tc" style="width:70px;">Bác sĩ điều trị<br><i style="font-weight:normal;">(ký và ghi rõ họ tên)</i></th>
+  </tr>
+</thead>`;
+
+function parseNgayVN_(s){
+  const p=(s||'').split('/');
+  return p.length>=3 ? {d:p[0],m:p[1],y:p[2]} : {d:'',m:'',y:''};
+}
+
+function buildKhoaReprintHtml(msbb){
+  const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb)
     .sort((a,b)=>(parseInt(a[4])||0)-(parseInt(b[4])||0));
   if(!rows.length) return null;
   const r0=rows[0];
   const ngayBB=r0[2]||'', khoa=r0[3]||'';
   const dsXN=r0[21]||'', ddHC=r0[22]||'', ldKhoa=r0[23]||'', thoiGian=r0[24]||'';
-  const tvNames=[r0[25],r0[26],r0[27],r0[28],r0[29],r0[30]].filter(Boolean);
+  const tv=[r0[25]||'',r0[26]||'',r0[27]||'',r0[28]||'',r0[29]||'',r0[30]||''];
   const gioKT=r0[31]||'', phutKT=r0[32]||'';
   const status=r0[33]||'Đã hủy';
   const audit=parseAuditJson(r0[34]);
   const reprintNow=new Date().toLocaleString('vi-VN'); // giống cách lấy "Ngày lưu" khi lưu biên bản
+  const nDD=parseNgayVN_(ngayBB);
 
   let bodyRows='';
   rows.forEach((r,i)=>{
-    const nd=r[13]!==''&&r[13]!=null ? `${r[13]} ${r[14]||''}` : '';
+    const ndVal = r[13]!==''&&r[13]!=null ? `${r[13]}${(r[15]!==''&&r[15]!=null)?'/'+r[15]:''} ${r[14]||''}` : '';
     bodyRows+=`<tr>
-      <td>${i+1}</td>
-      <td style="text-align:left;">${r[5]||''}</td>
+      <td class="stt-col">${i+1}</td>
       <td>${r[6]||''}</td>
+      <td style="text-align:left;">${r[5]||''}</td>
       <td>${r[7]||''}</td>
       <td>${r[8]||''}</td>
       <td>${r[9]||''}</td>
       <td>${r[10]!==''&&r[10]!=null?r[10]:''}</td>
-      <td>${r[11]||''}</td>
-      <td>${r[12]||''}</td>
-      <td>${nd}</td>
-      <td>${r[15]!==''&&r[15]!=null?r[15]:''}</td>
-      <td>${r[16]!==''&&r[16]!=null?r[16]:''}</td>
-      <td>${r[17]!==''&&r[17]!=null?r[17]:''}</td>
-      <td>${r[18]||''}</td>
-      <td>${r[19]||''}</td>
-      <td>${r[20]||''}</td>
+      <td class="gn-ht-tc">${r[11]||''}</td>
+      <td class="gn-ht-tc">${r[12]||''}</td>
+      <td class="gn-ht-tc">${ndVal}</td>
+      <td class="gn-ht-tc">${r[16]!==''&&r[16]!=null?r[16]:''}</td>
+      <td class="gn-ht-tc">${r[17]!==''&&r[17]!=null?r[17]:''}</td>
+      <td class="gn-ht-tc">${r[18]||''}</td>
+      <td class="gn-ht-tc">${r[19]||''}</td>
+      <td></td>
+      <td></td>
+      <td class="row-act"></td>
     </tr>`;
   });
 
+  const nl=(idx,label)=>`<div class="nl"><span class="idx">${idx}.</span><span style="display:inline-block;min-width:110px;border-bottom:1px dotted #999;padding:0 4px;font-weight:600;">${tv[idx-1]||''}</span><span class="pre">${label}</span></div>`;
+  const sncBlock=(id,val)=>`<div class="sign-nc" id="${id}"><div style="height:80px;"></div><div class="snc-inp" style="border:none;text-align:center;font-weight:600;">${val||''}</div></div>`;
+
   return `
-    <div class="rpt-wrap">
-      <div class="rpt-header">
-        <div class="rpt-hl"><p class="bold">BỘ Y TẾ</p><p class="bold underline">BỆNH VIỆN NHI TRUNG ƯƠNG</p></div>
-        <div class="rpt-hr"><p class="bold">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</p><p class="bold underline">Độc lập - Tự do - Hạnh phúc</p></div>
+    <div class="form-wrap" style="background:transparent;">
+      <!-- PAGE 1 -->
+      <div class="page">
+        <div class="barcode-area show"><svg class="bc-svg" id="rpBcSvg1_${msbb}"></svg><div class="msbb" id="rpBcMsbb1_${msbb}"></div><div class="reprint-stamp">In lại (${reprintNow})</div></div>
+        <div class="head-row">
+          <div class="head-col" style="padding-left:24mm;"><p class="upper">Bộ Y tế</p><p class="bold upper"><span class="mid-ul">Bệnh viện Nhi Trung ương</span></p></div>
+          <div class="head-col head-right">
+            <p class="bold upper">Cộng hoà xã hội chủ nghĩa Việt Nam</p>
+            <p class="bold line2"><span class="mid-ul">Độc lập - Tự do - Hạnh phúc</span></p>
+          </div>
+        </div>
+        <div class="title">Biên bản hủy bao bì tiếp xúc trực tiếp và thuốc GN-HT-TC không sử dụng hết đơn vị đóng gói nhỏ nhất</div>
+        <div class="khoa-line">
+          <label style="white-space:nowrap;">1.</label>
+          <span class="khoa-pv" style="display:inline;font-family:'Times New Roman',Times,serif;font-size:13px;font-weight:bold;border-bottom:1px dotted #000;padding:0 4px;">${khoa}</span>
+          <span class="khoa-sfx"> thực hiện thu hồi và đề xuất hủy các thuốc sau:</span>
+        </div>
+        <table class="main">${REPRINT_MAIN_THEAD}<tbody>${bodyRows}</tbody></table>
+        <div class="fnrow">
+          <div class="fn">
+            <span class="fn-t">Chú thích:</span><br>
+            (*) DW (Nước cất pha tiêm), NS (NaCl 0,9%), G5 (Glucose 5%)<br>
+            (**) Lượng thuốc trong dư phẩm/hàm lượng thuốc của 1 ĐVT<br>
+            (***) Nhân viên khoa Dược kiểm tra và nhận bàn giao danh mục, số lượng bao bì TXTT, tình trạng thực tế của thuốc không sử dụng hết, ký &amp; ghi rõ họ tên.<br>
+            (****) Nếu số lượng thực tế khớp với sổ sách, đánh dấu "x"; nếu sai, ghi "lệch" và ghi chú thông tin lệch vào biên bản hủy thuốc.
+          </div>
+          <div class="sgn">
+            <p class="sdt" style="visibility:hidden;" aria-hidden="true">Hà Nội, ngày <span>1</span> tháng <span>1</span> năm <span>1</span></p>
+            <p class="role">Dược sĩ xác nhận</p><p class="hint">(Ký, ghi rõ họ tên)</p>
+            <div style="height:62px;"></div>
+            <div style="text-align:center;font-weight:600;border-bottom:1px dotted #999;">${dsXN||'&nbsp;'}</div>
+          </div>
+          <div class="sgn">
+            <p class="sdt" style="visibility:hidden;" aria-hidden="true">Hà Nội, ngày <span>1</span> tháng <span>1</span> năm <span>1</span></p>
+            <p class="role">Điều dưỡng hành chính</p><p class="hint">(Ký, ghi rõ họ tên)</p>
+            <div style="height:62px;"></div>
+            <div style="text-align:center;font-weight:600;border-bottom:1px dotted #999;">${ddHC||'&nbsp;'}</div>
+          </div>
+          <div class="sgn">
+            <p class="sdt">Hà Nội, ngày ${nDD.d||'….'} tháng ${nDD.m||'….'} năm ${nDD.y||'….'}</p>
+            <p class="role">Lãnh đạo khoa/Trung tâm</p><p class="hint">(Ký, ghi rõ họ tên)</p>
+            <div style="height:62px;"></div>
+            <div style="text-align:center;font-weight:600;border-bottom:1px dotted #999;">${ldKhoa||'&nbsp;'}</div>
+          </div>
+        </div>
+        <div class="pg-foot"><span>BM7/QTQL.D.22.1</span><span>Trang 1 / 2</span><span>${new Date().toLocaleDateString('vi-VN')}</span></div>
       </div>
-      <div class="rpt-title">BIÊN BẢN HỦY BAO BÌ TIẾP XÚC TRỰC TIẾP<br>THUỐC GÂY NGHIỆN - HƯỚNG THẦN - TIỀN CHẤT</div>
-      <div class="rpt-khoa">
-        Mã biên bản: <b>${msbb||'—'}</b> &nbsp;&nbsp;
-        Khoa/Trung tâm: <b>${khoa}</b> &nbsp;&nbsp;
-        Ngày biên bản: <b>${ngayBB}</b> &nbsp;&nbsp;
-        Trạng thái: ${statusBadgeHtml(status)}
+
+      <!-- PAGE 2 -->
+      <div class="page">
+        <div class="barcode-area show"><svg class="bc-svg" id="rpBcSvg2_${msbb}"></svg><div class="msbb" id="rpBcMsbb2_${msbb}"></div><div class="reprint-stamp">In lại (${reprintNow})</div></div>
+        <div class="section-title" style="margin-top:16mm;">2. Tiến hành tiêu hủy</div>
+        <p class="para">Căn cứ đề xuất hủy của <span style="display:inline;white-space:nowrap;border-bottom:1px dotted #999;font-weight:600;">${khoa}</span>, Bệnh viện tiến hành hủy bao bì tiếp xúc trực tiếp và thuốc gây nghiện, thuốc hướng thần, tiền chất dạng dung dịch chưa sử dụng hết đơn vị đóng gói nhỏ nhất với các nội dung như sau:</p>
+        <div style="margin-bottom:6px;">
+          <div class="khoa-line" style="margin-bottom:2px;">
+            <label class="bold" style="white-space:nowrap;">Địa điểm:</label>
+            <span style="font-style:italic;">Khoa Dược</span>
+          </div>
+          <div class="khoa-line" style="margin-bottom:0;">
+            <label class="bold" style="white-space:nowrap;">Thời gian:</label>
+            <span>${thoiGian||'…………………'}</span>
+          </div>
+        </div>
+        <div class="method-row" style="margin-top:4px;">
+          <div class="method-l">
+            <p class="bold" style="margin-bottom:9px;">Phương pháp hủy:</p>
+            <p style="margin:4px 0;">- Với bao bì TXTT: cho vào máy nghiền để nghiền nát bao bì TXTT thành chất thải rắn, rồi xử lý rác thải theo quy định của Bệnh viện</p>
+            <p style="margin:4px 0;">- Với thuốc GN-HT-TC không sử dụng hết: Đổ dư phẩm thuốc vào xô nước để hòa loãng rồi đổ vào đường nước thải chung</p>
+          </div>
+          <div class="method-r">
+            <p class="bold" style="margin-top:-2.4em;margin-bottom:5px;">Thành phần tham gia:</p>
+            ${nl(1,'Thành viên Hội đồng hủy thuốc')}
+            ${nl(2,'Thành viên Hội đồng hủy thuốc')}
+            ${nl(3,'Thành viên Hội đồng hủy thuốc')}
+            ${nl(4,'Khoa Dược, Nhân viên thu hồi bao bì TXTT')}
+            ${nl(5,'Nhân viên đưa thuốc')}
+            <div class="nl" style="align-items:flex-start;"><span class="idx">6.</span><span style="display:inline-block;min-width:110px;border-bottom:1px dotted #999;padding:0 4px;font-weight:600;">${tv[5]||''}</span><span class="pre" style="display:flex;flex-direction:column;align-items:flex-end;text-align:right;"><span style="white-space:nowrap;">Khoa DP&amp;KSNK</span><span style="font-size:10px;font-style:italic;white-space:nowrap;">(tiếp nhận rác và xử lý theo đúng quy định)</span></span></div>
+          </div>
+        </div>
+        <p style="margin:4px 0;line-height:1.4;">Chúng tôi cùng chứng kiến và thực hiện hủy hết lượng bao bì tiếp xúc trực tiếp và thuốc gây nghiện, thuốc hướng thần, tiền chất dạng dung dịch chưa sử dụng hết đơn vị đóng gói nhỏ nhất đúng như trên Mục 1.</p>
+        <p style="margin:4px 0;line-height:1.4;">Sai lệch so với sổ sách (nếu có): <span style="display:inline-block;width:280px;border-bottom:1px dotted #555;">&nbsp;</span></p>
+        <div class="tl" style="margin:4px 0;">
+          <span>Việc tiêu hủy kết thúc vào lúc</span>
+          <span style="display:inline-block;min-width:24px;border-bottom:1px dotted #999;text-align:center;font-weight:600;">${gioKT||''}</span><span>giờ</span>
+          <span style="display:inline-block;min-width:24px;border-bottom:1px dotted #999;text-align:center;font-weight:600;">${phutKT||''}</span><span>phút cùng ngày.</span>
+        </div>
+        <p style="margin:4px 0;line-height:1.4;">Biên bản hủy thuốc được báo cáo lên <span style="display:inline-block;width:240px;border-bottom:1px dotted #999;">&nbsp;</span></p>
+        <p style="margin:4px 0;line-height:1.4;">Biên bản này được lập thành 01 bản, Hội đồng hủy thuốc lưu bản chính.</p>
+        <div class="sign-row2" style="margin-top:36px;">
+          <div class="sb2"><p class="role">THÀNH VIÊN THAM GIA HỦY</p>
+            <div class="sign-names-row">
+              ${sncBlock('rpSnc4',tv[3])}
+              ${sncBlock('rpSnc5',tv[4])}
+              ${sncBlock('rpSnc6',tv[5])}
+            </div>
+          </div>
+          <div class="sb2"><p class="role">HỘI ĐỒNG HỦY THUỐC</p>
+            <div class="sign-names-row">
+              ${sncBlock('rpSnc1',tv[0])}
+              ${sncBlock('rpSnc2',tv[1])}
+              ${sncBlock('rpSnc3',tv[2])}
+            </div>
+          </div>
+        </div>
+        <div class="pg-foot"><span>BM7/QTQL.D.22.1</span><span>Trang 2 / 2</span><span>${new Date().toLocaleDateString('vi-VN')}</span></div>
       </div>
-      <div class="rpt-reprint-note">🖨️ In lại (${reprintNow})</div>
-      <div style="overflow-x:auto;">
-        <table class="rpt" style="font-size:11px;">
-          <thead>
-            <tr>
-              <th style="width:20px;">STT</th>
-              <th style="width:110px;">Tên thuốc</th>
-              <th style="width:70px;">Hoạt chất</th>
-              <th style="width:60px;">Nồng độ/HL</th>
-              <th style="width:50px;">Số lô</th>
-              <th style="width:34px;">ĐVT</th>
-              <th style="width:50px;">SL bao bì NCC</th>
-              <th style="width:70px;">Bao bì chứa dư phẩm</th>
-              <th style="width:60px;">Dịch truyền pha 1 ĐVT</th>
-              <th style="width:60px;">Nồng độ dư phẩm</th>
-              <th style="width:50px;">TT nồng độ (ml)</th>
-              <th style="width:50px;">TT cần hủy (ml)</th>
-              <th style="width:50px;">Tỷ lệ dư phẩm</th>
-              <th style="width:80px;">Điều dưỡng y lệnh</th>
-              <th style="width:80px;">Bác sĩ điều trị</th>
-              <th style="width:80px;">Ghi chú</th>
-            </tr>
-          </thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-      </div>
-      <div class="rpt-note" style="margin-top:14px;line-height:1.9;">
-        <b>Dược sĩ xác nhận:</b> ${dsXN||'…………………'} &nbsp;&nbsp;&nbsp;
-        <b>Điều dưỡng hành chính:</b> ${ddHC||'…………………'} &nbsp;&nbsp;&nbsp;
-        <b>Lãnh đạo khoa:</b> ${ldKhoa||'…………………'}<br>
-        <b>Thành viên Hội đồng hủy thuốc:</b> ${tvNames.length?tvNames.join(', '):'…………………'}<br>
-        <b>Thời gian thực hiện:</b> ${thoiGian||'…'} &nbsp;&nbsp;
-        <b>Kết thúc lúc:</b> ${gioKT||'…'} giờ ${phutKT||'…'} phút
-      </div>
-      <div class="rpt-audit-block" style="margin-top:16px;border-top:1px dashed #ccc;padding-top:12px;">
-        <b style="font-size:12.5px;font-family:Arial,sans-serif;">🕘 Lịch sử thay đổi trạng thái (Audit):</b>
-        <div style="margin-top:6px;">${auditHtml(audit)}</div>
-      </div>
+    </div>
+    <div class="rpt-audit-block" style="max-width:1100px;margin:16px auto 0;padding:14px 18px;background:#fff;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.1);">
+      <div style="font-family:Arial,sans-serif;font-size:12.5px;margin-bottom:8px;">Trạng thái hiện tại: ${statusBadgeHtml(status)}</div>
+      <b style="font-size:12.5px;font-family:Arial,sans-serif;">🕘 Lịch sử thay đổi trạng thái (Audit):</b>
+      <div style="margin-top:6px;">${auditHtml(audit)}</div>
     </div>`;
 }
 
+function renderKhoaReprintBarcodes(msbb){
+  if(typeof JsBarcode==='undefined') return;
+  [1,2].forEach(p=>{
+    const svg=document.getElementById(`rpBcSvg${p}_${msbb}`);
+    const msbbEl=document.getElementById(`rpBcMsbb${p}_${msbb}`);
+    if(!svg||!msbb) return;
+    try{ JsBarcode(svg,msbb,{format:'CODE128',width:1.2,height:26,displayValue:false,margin:0}); }catch(e){}
+    if(msbbEl) msbbEl.textContent=msbb;
+  });
+}
+
 function openKhoaViewModal(msbb){
-  const html=buildKhoaViewHtml(msbb);
+  const html=buildKhoaReprintHtml(msbb);
   if(!html){ alert('Không tìm thấy dữ liệu biên bản này.'); return; }
   _currentModalMsbb=msbb;
   document.getElementById('khoaViewModalBody').innerHTML=html;
   document.getElementById('khoaViewModalOverlay').classList.add('show');
+  renderKhoaReprintBarcodes(msbb);
 }
 function closeKhoaViewModal(){
   document.getElementById('khoaViewModalOverlay').classList.remove('show');
 }
 function printKhoaModal(){
-  // In lại tem thời gian ngay trước khi in, để phản ánh đúng thời điểm bấm nút "In"
-  const html=buildKhoaViewHtml(_currentModalMsbb);
+  // Dựng lại nội dung + tem "In lại (giờ)" ngay trước khi in, phản ánh đúng thời điểm bấm nút In
+  const html=buildKhoaReprintHtml(_currentModalMsbb);
   if(html) document.getElementById('khoaViewModalBody').innerHTML=html;
+  renderKhoaReprintBarcodes(_currentModalMsbb);
+  document.body.dataset.ps='s-form'; // tái dùng toàn bộ CSS in ấn có sẵn của biên bản gốc (.page, table.main, …)
   document.documentElement.classList.add('khoa-modal-open');
   window.print();
 }
-window.addEventListener('afterprint', ()=>{ document.documentElement.classList.remove('khoa-modal-open'); });
+window.addEventListener('afterprint', ()=>{
+  document.documentElement.classList.remove('khoa-modal-open');
+});
+
 
 /* ── MODAL ĐỀ NGHỊ HỦY ── */
 function openDeNghiHuyModal(msbb){
@@ -1367,7 +1527,7 @@ async function submitDeNghiHuy(){
   try{
     if(su){
       // Yêu cầu Apps Script hỗ trợ action=proposeHuy — xem ghi chú triển khai backend.
-      // Script cần: tìm các dòng theo msbb, ghi Trạng thái="Đề xuất hủy", và ĐỌC cột Audit hiện có (JSON),
+      // Script cần: tìm các dòng theo msbb, ghi Trạng thái="Đề xuất", và ĐỌC cột Audit hiện có (JSON),
       // PUSH thêm auditEntry vào mảng đó rồi ghi đè lại (không được xoá lịch sử cũ).
       await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
         action:'proposeHuy', msbb, nguoiDeNghi:nguoi, lyDoHuy:lyDo,
@@ -1376,7 +1536,19 @@ async function submitDeNghiHuy(){
     }
     // Cập nhật trạng thái + audit tạm thời trên giao diện (chờ đồng bộ lại từ Sheet ở lần tải sau)
     const g=_khoaBBGroups.find(x=>x.msbb===msbb);
-    if(g){ g.status='Đề xuất hủy'; g.audit=[...(g.audit||[]),auditEntry]; }
+    if(g){ g.status='Đề xuất'; g.audit=[...(g.audit||[]),auditEntry]; }
+    // Vá luôn dữ liệu gốc OUT_DATA_RAW để popup Xem/In (đọc trực tiếp từ đây) phản ánh đúng ngay,
+    // không bị hiện lại trạng thái cũ "Đã hủy" do đọc dữ liệu chưa đồng bộ từ Sheet.
+    OUT_DATA_RAW.forEach(r=>{
+      if(r[0]===msbb){
+        r[33]='Đề xuất';
+        try{
+          const arr=r[34]?JSON.parse(r[34]):[];
+          arr.push(auditEntry);
+          r[34]=JSON.stringify(arr);
+        }catch(e){ r[34]=JSON.stringify([auditEntry]); }
+      }
+    });
     renderKhoaBBTable();
     closeDeNghiHuyModal();
     alert('✅ Đã gửi đề nghị hủy. Trạng thái sẽ được cập nhật đầy đủ sau khi quản trị viên xử lý.');
@@ -1388,8 +1560,162 @@ async function submitDeNghiHuy(){
   }
 }
 
+/* ── DUYỆT BIÊN BẢN (VAI TRÒ HỘI ĐỒNG HỦY THUỐC) ── */
+let _reviewMsbbList=[]; // [{msbb, khoa, status, rows:[[...]], expanded, _edited}]
+
+async function importReviewMsbb(){
+  const inp=document.getElementById('reviewMsbbInput');
+  const msbb=(inp.value||'').trim();
+  const errEl=document.getElementById('reviewErr');
+  errEl.classList.remove('show');
+  if(!msbb){ errEl.textContent='⚠️ Vui lòng nhập Mã biên bản.'; errEl.classList.add('show'); return; }
+  if(_reviewMsbbList.find(x=>x.msbb===msbb)){ errEl.textContent='⚠️ Mã biên bản này đã có trong bảng.'; errEl.classList.add('show'); inp.value=''; return; }
+  const btn=document.getElementById('btnReviewImport');
+  btn.disabled=true; btn.textContent='⏳ Đang tra cứu…';
+  try{
+    await loadOutSheet(true,'raw');
+    const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb).sort((a,b)=>(parseInt(a[4])||0)-(parseInt(b[4])||0));
+    if(!rows.length){ errEl.textContent='🔴 Không tìm thấy biên bản với mã này trong CSDL thô.'; errEl.classList.add('show'); return; }
+    const status=rows[0][33]||'Đã hủy';
+    const khoa=rows[0][3]||'';
+    _reviewMsbbList.unshift({msbb,khoa,status,rows:rows.map(r=>r.slice()),expanded:true,_edited:false});
+    inp.value='';
+    renderReviewList();
+  }finally{
+    btn.disabled=false; btn.textContent='📥 Nhập vào bảng';
+  }
+}
+
+const REVIEW_COLS=[
+  {label:'STT',idx:4,ro:true},
+  {label:'Tên thuốc',idx:5},
+  {label:'Hoạt chất',idx:6},
+  {label:'Nồng độ/HL',idx:7},
+  {label:'Số lô',idx:8},
+  {label:'ĐVT',idx:9},
+  {label:'SL bao bì NCC',idx:10},
+  {label:'Bao bì chứa dư phẩm',idx:11},
+  {label:'Dịch truyền pha 1 ĐVT',idx:12},
+  {label:'Nồng độ dư phẩm',idx:13},
+  {label:'Đơn vị nồng độ',idx:14},
+  {label:'TT nồng độ (ml)',idx:15},
+  {label:'TT cần hủy (ml)',idx:16},
+  {label:'Tỷ lệ dư phẩm',idx:17},
+  {label:'Điều dưỡng y lệnh',idx:18},
+  {label:'Bác sĩ điều trị',idx:19},
+  {label:'Ghi chú',idx:20},
+];
+
+function renderReviewList(){
+  const tbody=document.getElementById('reviewListBody');
+  if(!_reviewMsbbList.length){ tbody.innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Chưa có biên bản nào — nhập MSBB ở trên để tra cứu.</td></tr>'; return; }
+  tbody.innerHTML='';
+  _reviewMsbbList.forEach((item,idx)=>{
+    const tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid #eee';
+    tr.innerHTML=`
+      <td style="padding:8px 10px;cursor:pointer;text-align:center;" onclick="toggleReviewExpand(${idx})">${item.expanded?'▼':'▶'}</td>
+      <td style="padding:8px 10px;font-weight:600;cursor:pointer;" onclick="toggleReviewExpand(${idx})">${item.msbb}${item._edited?' <span style="color:#c0392b;font-weight:400;font-size:11px;">(đã chỉnh sửa)</span>':''}</td>
+      <td style="padding:8px 10px;">${item.khoa}</td>
+      <td style="padding:8px 10px;">${statusBadgeHtml(item.status)}</td>
+      <td style="padding:8px 10px;white-space:nowrap;">
+        <button class="btn" style="padding:5px 9px;font-size:12px;background:#e3f7e9;color:#1e7d52;" onclick="reviewAction(${idx},'Đã duyệt')">✅ Duyệt</button>
+        <button class="btn" style="padding:5px 9px;font-size:12px;background:#eee3ff;color:#5a2ea6;margin-left:4px;" onclick="reviewAction(${idx},'Đã duyệt (có chỉnh sửa)')">✏️ Duyệt (có chỉnh sửa)</button>
+        <button class="btn" style="padding:5px 9px;font-size:12px;background:#fdecea;color:#c0392b;margin-left:4px;" onclick="reviewAction(${idx},'Đã hủy')">🚫 Hủy</button>
+        <button class="btn btn-gh" style="padding:5px 9px;font-size:12px;margin-left:4px;" onclick="removeReviewItem(${idx})">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+    if(item.expanded){
+      const trX=document.createElement('tr');
+      trX.innerHTML=`<td colspan="5" style="padding:0;background:#fafbfc;">${buildReviewEditTable(item,idx)}</td>`;
+      tbody.appendChild(trX);
+    }
+  });
+}
+
+function toggleReviewExpand(idx){
+  _reviewMsbbList[idx].expanded=!_reviewMsbbList[idx].expanded;
+  renderReviewList();
+}
+function removeReviewItem(idx){
+  _reviewMsbbList.splice(idx,1);
+  renderReviewList();
+}
+
+function buildReviewEditTable(item,itemIdx){
+  const head='<tr>'+REVIEW_COLS.map(c=>`<th style="padding:6px 8px;font-size:11px;border-bottom:1.5px solid #d0d5dd;white-space:nowrap;">${c.label}</th>`).join('')+'</tr>';
+  let body='';
+  item.rows.forEach((r,rIdx)=>{
+    body+='<tr>'+REVIEW_COLS.map(c=>{
+      const val=r[c.idx]!=null?r[c.idx]:'';
+      if(c.ro){
+        return `<td style="padding:5px 8px;font-size:12px;text-align:center;">${val}</td>`;
+      }
+      const safe=String(val).replace(/"/g,'&quot;');
+      return `<td style="padding:3px 4px;"><input type="text" value="${safe}" style="width:100%;min-width:76px;padding:5px 6px;border:1px solid #d8dce2;border-radius:5px;font-size:12px;font-family:Arial,sans-serif;" onchange="onReviewCellEdit(${itemIdx},${rIdx},${c.idx},this.value)"></td>`;
+    }).join('')+'</tr>';
+  });
+  return `<div style="padding:12px 14px;overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">
+    <thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+function onReviewCellEdit(itemIdx,rowIdx,colIdx,newVal){
+  _reviewMsbbList[itemIdx].rows[rowIdx][colIdx]=newVal;
+  _reviewMsbbList[itemIdx]._edited=true;
+  renderReviewList();
+}
+
+async function reviewAction(idx,newStatus){
+  const item=_reviewMsbbList[idx];
+  const nguoi = LOGIN_USER || 'Quản trị viên';
+  let lyDo='';
+  if(newStatus==='Đã hủy'){
+    lyDo=prompt('Nhập lý do hủy biên bản '+item.msbb+' (có thể để trống):')||'';
+  }
+  const hanhDongText = newStatus==='Đã duyệt (có chỉnh sửa)'?'Duyệt (có chỉnh sửa)':(newStatus==='Đã duyệt'?'Duyệt':'Hủy biên bản');
+  const auditEntry={
+    thoiGian:new Date().toLocaleString('vi-VN'),
+    hanhDong:hanhDongText,
+    nguoiThucHien:nguoi,
+    lyDo,
+  };
+  const su=localStorage.getItem('scriptUrl');
+  const editedRows = newStatus==='Đã duyệt (có chỉnh sửa)' ? item.rows : null;
+  const btnRow=event?.target;
+  if(btnRow) btnRow.disabled=true;
+  try{
+    if(su){
+      // Yêu cầu Apps Script hỗ trợ action=reviewBienBan — xem ghi chú triển khai backend trong Code.gs.
+      await fetch(su,{method:'POST',mode:'no-cors',body:JSON.stringify({
+        action:'reviewBienBan', msbb:item.msbb, newStatus, editedRows, auditEntry
+      })});
+    }
+    item.status=newStatus;
+    item._edited=false;
+    // Vá luôn OUT_DATA_RAW để các màn khác (danh sách khoa, popup xem/in) phản ánh đúng ngay lập tức
+    OUT_DATA_RAW.forEach(r=>{
+      if(r[0]===item.msbb){
+        r[33]=newStatus;
+        try{ const arr=r[34]?JSON.parse(r[34]):[]; arr.push(auditEntry); r[34]=JSON.stringify(arr); }
+        catch(e){ r[34]=JSON.stringify([auditEntry]); }
+        if(editedRows){
+          const stt=parseInt(r[4])||0;
+          const matched=editedRows.find(er=>(parseInt(er[4])||0)===stt);
+          if(matched){ for(let c=5;c<=20;c++) r[c]=matched[c]; }
+        }
+      }
+    });
+    renderReviewList();
+    alert(`✅ Đã cập nhật trạng thái "${newStatus}" cho biên bản ${item.msbb}.`);
+  }catch(e){
+    alert('🔴 Lỗi cập nhật: '+e.message);
+  }finally{
+    if(btnRow) btnRow.disabled=false;
+  }
+}
+
 /* ── ROUTER ── */
-const SCREENS=['s-home','s-data','s-report','s-form','s-khoa-portal'];
+const SCREENS=['s-home','s-data','s-report','s-review','s-form','s-khoa-portal'];
 const PUBLIC_SCREENS=['s-form','s-khoa-portal']; // Không cần đăng nhập quản trị (khoa dùng cổng đăng nhập riêng)
 function go(id){
   if(!isAuthed() && !PUBLIC_SCREENS.includes(id)){ showLogin('admin'); return; }
@@ -1499,9 +1825,9 @@ function checkRoute(){
   if(h==='#admin-login'){ showLogin('admin'); return; }
   if(h==='#khoa-login'){ showKhoaLogin(); return; }
   if(h==='#khoa-portal'){ isKhoaAuthed() ? go('s-khoa-portal') : showKhoaLogin(); return; }
-  if(h==='#data'||h==='#report'){
+  if(h==='#data'||h==='#report'||h==='#review'){
     if(!isAuthed()){ showLogin('admin'); return; }
-    go(h==='#data'?'s-data':'s-report');
+    go(h==='#data'?'s-data':(h==='#report'?'s-report':'s-review'));
     return;
   }
   if(h===''||h==='#'){
@@ -1613,6 +1939,13 @@ upPnums();
 /* ── PRINT — set body[data-ps] so CSS knows which screen to show ── */
 let _theoPageStyle = null;
 window.addEventListener('beforeprint',()=>{
+  if(document.documentElement.classList.contains('khoa-modal-open')){
+    // In từ modal Xem/In lại biên bản (khoa) — dùng lại toàn bộ CSS in ấn của biên bản gốc,
+    // bỏ qua hoàn toàn logic phát hiện màn hình đang active / chặn in biên bản chưa lưu (chỉ áp dụng cho form đang sống).
+    document.body.dataset.ps='s-form';
+    delete document.body.dataset.psBlocked;
+    return;
+  }
   const active=SCREENS.find(s=>document.getElementById(s).classList.contains('active'))||'s-form';
   document.body.dataset.ps=active;
   if(active==='s-form'){
