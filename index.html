@@ -1006,7 +1006,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -3218,6 +3218,7 @@ async function loadScheduleSheet(silent){
     const res=await fetch(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const rows=parseCsv(await res.text());
     SCHEDULE_DATA=parseScheduleMatrix_(rows);
+    _scheduleDayAssignCache=null; // dữ liệu lịch vừa đồng bộ lại — xoá cache phân công theo ngày cũ
     updateTvPreviews(); // update TV placeholders after schedule syncs
   }catch(e){if(!silent)console.error('loadScheduleSheet:',e);}
 }
@@ -3328,23 +3329,46 @@ function resolveScheduleSourceDate(targetDate){
   return null; // Không có ngày nào trong 15 ngày tới có phân công → để trống hoàn toàn
 }
 
-function findMemberForPos(pos, targetDate, cosoN){
-  const srcDate=resolveScheduleSourceDate(targetDate);
-  if(!srcDate) return null;
+/** Tính TOÀN BỘ phân công (vị trí 1,2,3,4,6) cho 1 ngày nguồn (srcDate) trong MỘT LẦN DUY NHẤT,
+ *  rồi trả về map {vị trí: thành viên} — đảm bảo mọi vị trí đều được xét dựa trên ĐÚNG 1 danh sách
+ *  thành viên chung của ngày đó, tránh việc tính rời rạc từng vị trí dẫn tới bỏ sót thành viên. */
+function buildScheduleDayAssignments_(srcDate){
+  const map={};
+  if(!srcDate) return map;
   const sameDate=SCHEDULE_DATA.filter(r=>r._date && r._date.toDateString()===srcDate.toDateString());
-  if(!sameDate.length) return null;
-  // 1) Ưu tiên người được điền SỐ đúng bằng vị trí đang cần
-  const fixed=sameDate.find(r=>r.pos===pos);
-  if(fixed) return fixed;
-  // 2) Không có ai điền số cố định cho vị trí này → xét những người điền "x" (không giới hạn vị trí),
-  //    gán theo thứ tự xuất hiện trong Sheet vào các vị trí còn trống (chưa bị chiếm bởi số cố định)
-  //    theo đúng thứ tự ưu tiên 1,2,3,4,6.
-  const filledPositions=new Set(sameDate.filter(r=>typeof r.pos==='number').map(r=>r.pos));
+  if(!sameDate.length) return map;
+  // 1) Gán trước TẤT CẢ những người điền SỐ cố định đúng vị trí của họ
+  const filledPositions=new Set();
+  sameDate.forEach(r=>{
+    if(typeof r.pos==='number' && SCHEDULE_POS_ORDER.includes(r.pos) && !map[r.pos]){
+      map[r.pos]=r;
+      filledPositions.add(r.pos);
+    }
+  });
+  // 2) Những người điền "x" (không giới hạn vị trí) — LẤY HẾT theo đúng thứ tự xuất hiện trong Sheet,
+  //    lần lượt lấp đầy các vị trí CÒN TRỐNG theo thứ tự ưu tiên 1,2,3,4,6.
   const flexible=sameDate.filter(r=>r.pos==='x');
   const openSlots=SCHEDULE_POS_ORDER.filter(p=>!filledPositions.has(p));
-  const slotIdx=openSlots.indexOf(pos);
-  if(slotIdx!==-1 && flexible[slotIdx]) return flexible[slotIdx];
-  return null;
+  openSlots.forEach((p,i)=>{ if(flexible[i]) map[p]=flexible[i]; });
+  return map;
+}
+
+// Cache theo ngày (chuỗi toDateString) để không phải tính lại nhiều lần khi gọi liên tiếp
+// cho từng vị trí 1,2,3,4,6 của CÙNG một ngày — đồng thời đảm bảo mọi vị trí luôn dùng
+// chung đúng 1 kết quả nhất quán.
+let _scheduleDayAssignCache=null;
+function getScheduleDayAssignments_(targetDate){
+  const key=targetDate.toDateString();
+  if(_scheduleDayAssignCache && _scheduleDayAssignCache.key===key) return _scheduleDayAssignCache.map;
+  const srcDate=resolveScheduleSourceDate(targetDate);
+  const map=buildScheduleDayAssignments_(srcDate);
+  _scheduleDayAssignCache={key,map};
+  return map;
+}
+
+function findMemberForPos(pos, targetDate, cosoN){
+  const map=getScheduleDayAssignments_(targetDate);
+  return map[pos]||null;
 }
 
 /* ── TV INPUT HELPERS + SKIP TOGGLE ── */
