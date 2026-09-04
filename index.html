@@ -835,6 +835,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <button class="fbt add" id="btnAdd" onclick="handleFormBarNavBtn()">🔑 Đăng nhập</button>
     <button class="fbt save" id="btnSave" onclick="saveForm()">💾 Lưu biên bản</button>
     <span class="sbdg" id="sbdg">✅ Đã lưu lúc <span id="savedTime"></span></span>
+    <button class="fbt add" id="btnBackToManage" style="display:none;" onclick="handleFormBarNavBtn()">🔙 Quay về trang quản lý</button>
     <button class="fbt prt" id="btnPrint" onclick="window.print()" disabled>🖨️ In / PDF</button>
     <button class="new-btn" id="btnNew" onclick="resetForm()">📋 Biên bản mới</button>
   </div>
@@ -1004,7 +1005,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -1207,29 +1208,14 @@ function goKhoaForm(){
   location.hash='#form';
   go('s-form');
   // Điền sẵn tên khoa theo khoa đã đăng nhập — dispatch input để đồng bộ đầy đủ (trang 2, placeholder in, resize…)
+  // Chỉ là giá trị MẶC ĐỊNH — người dùng vẫn có thể chọn khoa khác nếu cần.
   setTimeout(()=>{
     const inp=document.getElementById('khoaInput');
     if(inp && khoa){
       inp.value=khoa;
       inp.dispatchEvent(new Event('input',{bubbles:true}));
     }
-    applyKhoaFieldLock();
   },80);
-}
-
-/* Đã đăng nhập theo khoa → cố định trường "Khoa/Trung tâm", không cho sổ ra/chọn khoa khác */
-function applyKhoaFieldLock(){
-  const inp=document.getElementById('khoaInput');
-  if(!inp) return;
-  if(isKhoaAuthed()){
-    inp.readOnly=true;
-    inp.style.background='#f0f0f0';
-    inp.style.cursor='not-allowed';
-  }else{
-    inp.readOnly=false;
-    inp.style.background='';
-    inp.style.cursor='';
-  }
 }
 
 /* Danh sách biên bản đã lưu của khoa (nhóm theo Mã biên bản — từ CSDL thô) */
@@ -1619,7 +1605,27 @@ async function submitBoDeNghiHuy(){
   }
   const btn=document.getElementById('btnSubmitBoDeNghiHuy');
   const orig=btn.textContent;
-  btn.disabled=true; btn.textContent='⏳ Đang gửi…';
+  btn.disabled=true; btn.textContent='⏳ Đang đồng bộ dữ liệu…';
+  // Đồng bộ lại trước khi gửi — tránh gửi yêu cầu dựa trên trạng thái đã cũ
+  await loadOutSheet(true,'raw');
+  const freshRow=OUT_DATA_RAW.find(r=>r[0]===msbb);
+  const freshStatus=freshRow?(freshRow[33]||'Chờ duyệt'):null;
+  if(freshStatus==null){
+    errEl.textContent='🔴 Không tìm thấy biên bản này trong dữ liệu mới nhất — vui lòng đồng bộ lại danh sách.';
+    errEl.classList.add('show');
+    btn.disabled=false; btn.textContent=orig;
+    return;
+  }
+  if(freshStatus!=='Đề xuất hủy'){
+    errEl.textContent=`🔴 Không thể bỏ đề nghị hủy — trạng thái biên bản vừa được cập nhật thành "${freshStatus}" (có thể do Hội đồng hủy thuốc vừa xử lý). Danh sách đã được làm mới.`;
+    errEl.classList.add('show');
+    btn.disabled=false; btn.textContent=orig;
+    const g=_khoaBBGroups.find(x=>x.msbb===msbb);
+    if(g) g.status=freshStatus;
+    renderKhoaBBTable();
+    return;
+  }
+  btn.textContent='⏳ Đang gửi…';
   const auditEntry={
     thoiGian:new Date().toLocaleString('vi-VN'),
     hanhDong:'Bỏ đề nghị hủy',
@@ -1680,7 +1686,28 @@ async function submitDeNghiHuy(){
   }
   const btn=document.getElementById('btnSubmitDeNghiHuy');
   const orig=btn.textContent;
-  btn.disabled=true; btn.textContent='⏳ Đang gửi…';
+  btn.disabled=true; btn.textContent='⏳ Đang đồng bộ dữ liệu…';
+  // Đồng bộ lại trước khi gửi — tránh trường hợp trạng thái đã bị thay đổi (vd. Hội đồng đã xử lý)
+  // trong lúc khoa đang mở form nhập lý do, dẫn tới đề nghị hủy chồng lên 1 quyết định đã có.
+  await loadOutSheet(true,'raw');
+  const freshRow=OUT_DATA_RAW.find(r=>r[0]===msbb);
+  const freshStatus=freshRow?(freshRow[33]||'Chờ duyệt'):null;
+  if(freshStatus==null){
+    errEl.textContent='🔴 Không tìm thấy biên bản này trong dữ liệu mới nhất — vui lòng đồng bộ lại danh sách.';
+    errEl.classList.add('show');
+    btn.disabled=false; btn.textContent=orig;
+    return;
+  }
+  if(freshStatus!=='Chờ duyệt'){
+    errEl.textContent=`🔴 Không thể gửi đề nghị hủy — trạng thái biên bản vừa được cập nhật thành "${freshStatus}" (có thể do Hội đồng hủy thuốc vừa xử lý). Danh sách đã được làm mới.`;
+    errEl.classList.add('show');
+    btn.disabled=false; btn.textContent=orig;
+    const g=_khoaBBGroups.find(x=>x.msbb===msbb);
+    if(g) g.status=freshStatus;
+    renderKhoaBBTable();
+    return;
+  }
+  btn.textContent='⏳ Đang gửi…';
   const thoiGianDeNghi=new Date().toLocaleString('vi-VN');
   const auditEntry={thoiGian:thoiGianDeNghi,hanhDong:'Đề xuất hủy',nguoiThucHien:nguoi,lyDo:lyDo};
   try{
@@ -1728,8 +1755,8 @@ async function importReviewMsbb(){
   const msbb=(inp.value||'').trim();
   const errEl=document.getElementById('reviewErr');
   errEl.classList.remove('show');
-  if(!msbb){ errEl.textContent='⚠️ Vui lòng nhập Mã biên bản.'; errEl.classList.add('show'); return; }
-  if(_reviewMsbbList.find(x=>x.msbb===msbb)){ errEl.textContent='⚠️ Mã biên bản này đã có trong bảng.'; errEl.classList.add('show'); inp.value=''; return; }
+  if(!msbb){ errEl.textContent='⚠️ Vui lòng nhập Mã biên bản.'; errEl.classList.add('show'); inp.focus(); return; }
+  if(_reviewMsbbList.find(x=>x.msbb===msbb)){ errEl.textContent='⚠️ Mã biên bản này đã có trong bảng.'; errEl.classList.add('show'); inp.value=''; inp.focus(); return; }
   const btn=document.getElementById('btnReviewImport');
   btn.disabled=true; btn.textContent='⏳ Đang tra cứu…';
   try{
@@ -1744,6 +1771,7 @@ async function importReviewMsbb(){
     renderReviewList();
   }finally{
     btn.disabled=false; btn.textContent='📥 Nhập vào bảng';
+    inp.focus(); // Luôn trỏ lại con trỏ về ô MSBB để nhập liên tiếp nhanh
   }
 }
 
@@ -1883,7 +1911,7 @@ function reviewAction(idx,newStatus){
     alert('⚠️ Chỉ có thể chọn "Duyệt (có chỉnh sửa)" sau khi đã sửa ít nhất 1 dòng thuốc — bấm vào biên bản để mở rộng và chỉnh sửa trước.');
     return;
   }
-  const nguoi = LOGIN_USER || 'Quản trị viên';
+  const nguoi = 'Hội đồng hủy thuốc';
   const hanhDongText = newStatus==='Đã duyệt (có chỉnh sửa)'?'Duyệt (có chỉnh sửa)':(newStatus==='Đã duyệt'?'Duyệt':'Hủy biên bản');
   const auditEntry={
     thoiGian:new Date().toLocaleString('vi-VN'),
@@ -2012,10 +2040,11 @@ function go(id){
       if(id==='s-form') setSyncDate();
     });
   }
-  if(id==='s-form') { updateFormBarNavBtn(); applyKhoaFieldLock(); }
+  if(id==='s-form') { updateFormBarNavBtn(); }
   else if(id==='s-data') { silentRefreshAll(); }
   else if(id==='s-report') { silentRefreshAll().then(()=>{ updateRptSourceMini(); }); updateRptSourceMini(); }
   else if(id==='s-khoa-portal') { loadKhoaPortalList(); }
+  else if(id==='s-review') { setTimeout(()=>document.getElementById('reviewMsbbInput')?.focus(),50); }
 }
 
 /* Nút đầu tiên trên thanh panel biên bản (trước đây là "+ Thêm dòng") giờ đổi vai trò
@@ -2815,6 +2844,7 @@ async function saveForm(){
     document.getElementById('sbdg').classList.add('show');
     document.getElementById('btnPrint').disabled=false;
     bs.style.display='none';document.getElementById('btnAdd').style.display='none';
+    if(isKhoaAuthed()||isAuthed()) document.getElementById('btnBackToManage').style.display='';
     document.getElementById('btnNew').classList.add('show');
     document.getElementById('formWrap').classList.add('form-locked');
     document.querySelectorAll('.note-input').forEach(i=>i.disabled=true);
@@ -2900,6 +2930,7 @@ function resetForm(){
   document.getElementById('btnPrint').disabled=true;
   const bs=document.getElementById('btnSave');bs.style.display='';bs.disabled=false;bs.textContent='💾 Lưu biên bản';
   document.getElementById('btnAdd').style.display='';
+  document.getElementById('btnBackToManage').style.display='none';
   document.getElementById('btnNew').classList.remove('show');
   document.querySelectorAll('.add-bar button').forEach(b=>b.disabled=false);
   const n=new Date();const d=n.getDate(),m=n.getMonth()+1,y=n.getFullYear();
@@ -3412,7 +3443,6 @@ function syncKhoaP2(){
 }
 function khoaSSFilter(q){ khoaSSRender(q); khoaSSOpen(); }
 function khoaSSOpen(){
-  if(isKhoaAuthed()) return; // Đã đăng nhập theo khoa — trường khoa bị khoá cố định, không cho sổ ra khoa khác
   if(!DEPTS.length) return;
   const inp = document.getElementById('khoaInput');
   const list = document.getElementById('khoaSSList');
