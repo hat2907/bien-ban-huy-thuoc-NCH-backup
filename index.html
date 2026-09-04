@@ -804,6 +804,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <div class="acard">
       <h2>Danh sách biên bản đang xử lý</h2>
       <div style="margin:10px 0 4px;">
+        <button class="btn btn-gh" onclick="syncReviewData()" id="btnReviewSync">🔄 Đồng bộ lại</button>
         <button class="btn" style="background:#1e7d52;color:#fff;font-weight:700;" onclick="reviewApproveAll()" id="btnReviewApproveAll">✅ Duyệt toàn bộ danh sách</button>
         <span id="reviewApproveAllStatus" style="font-size:12px;color:#888;font-family:Arial,sans-serif;margin-left:10px;"></span>
       </div>
@@ -1005,7 +1006,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -1651,6 +1652,7 @@ async function submitBoDeNghiHuy(){
     renderKhoaBBTable();
     closeBoDeNghiHuyModal();
     alert('✅ Đã gửi yêu cầu bỏ đề nghị hủy.');
+    loadKhoaPortalList(); // đồng bộ lại toàn bộ danh sách của khoa ngay sau khi thao tác
   }catch(e){
     errEl.textContent='🔴 Lỗi: '+e.message;
     errEl.classList.add('show');
@@ -1739,6 +1741,7 @@ async function submitDeNghiHuy(){
     renderKhoaBBTable();
     closeDeNghiHuyModal();
     alert('✅ Đã gửi đề nghị hủy.');
+    loadKhoaPortalList(); // đồng bộ lại toàn bộ danh sách của khoa ngay sau khi thao tác
   }catch(e){
     errEl.textContent='🔴 Lỗi gửi đề nghị: '+e.message;
     errEl.classList.add('show');
@@ -1749,6 +1752,20 @@ async function submitDeNghiHuy(){
 
 /* ── DUYỆT BIÊN BẢN (VAI TRÒ HỘI ĐỒNG HỦY THUỐC) ── */
 let _reviewMsbbList=[]; // [{msbb, khoa, ngayBB, status, rows:[[...]], expanded, _edited, pending:null|{newStatus,editedRows,auditEntry}}]
+
+/* Đồng bộ dữ liệu (CSDL thô) cho màn Duyệt biên bản — gọi khi mở trang, và có nút bấm thủ công riêng */
+async function syncReviewData(){
+  const btn=document.getElementById('btnReviewSync');
+  const statusEl=document.getElementById('reviewApproveAllStatus');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Đang đồng bộ…';}
+  try{
+    await loadOutSheet(true,'raw');
+    if(statusEl){statusEl.textContent='✅ Đã đồng bộ lúc '+new Date().toLocaleTimeString('vi-VN');statusEl.style.color='#1e7d52';}
+  }catch(e){
+    if(statusEl){statusEl.textContent='🔴 Đồng bộ lỗi: '+e.message;statusEl.style.color='#c0392b';}
+  }
+  if(btn){btn.disabled=false;btn.textContent='🔄 Đồng bộ lại';}
+}
 
 async function importReviewMsbb(){
   const inp=document.getElementById('reviewMsbbInput');
@@ -1988,6 +2005,8 @@ async function reviewApproveAll(){
   // Chỉ xoá khỏi danh sách những biên bản đã GHI THÀNH CÔNG lên Sheet; biên bản lỗi vẫn giữ lại để xử lý lại
   _reviewMsbbList=_reviewMsbbList.filter(it=>!it._committed);
   renderReviewList();
+  // Đồng bộ lại toàn bộ dữ liệu từ Sheet sau khi Duyệt toàn bộ, đảm bảo phản ánh đúng trạng thái mới nhất
+  await syncReviewData();
 }
 
 /* ── ROUTER ── */
@@ -2044,7 +2063,7 @@ function go(id){
   else if(id==='s-data') { silentRefreshAll(); }
   else if(id==='s-report') { silentRefreshAll().then(()=>{ updateRptSourceMini(); }); updateRptSourceMini(); }
   else if(id==='s-khoa-portal') { loadKhoaPortalList(); }
-  else if(id==='s-review') { setTimeout(()=>document.getElementById('reviewMsbbInput')?.focus(),50); }
+  else if(id==='s-review') { setTimeout(()=>document.getElementById('reviewMsbbInput')?.focus(),50); syncReviewData(); }
 }
 
 /* Nút đầu tiên trên thanh panel biên bản (trước đây là "+ Thêm dòng") giờ đổi vai trò
@@ -3198,37 +3217,104 @@ async function loadScheduleSheet(silent){
   try{
     const res=await fetch(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const rows=parseCsv(await res.text());
-    SCHEDULE_DATA=rows.slice(1).filter(r=>r.some(c=>c)).map(r=>({
-      stt:(r[0]||'').trim(),ten:(r[1]||'').trim(),khoa:(r[2]||'').trim(),coSo:(r[3]||'').trim(),ngay:(r[4]||'').trim()
-    }));
+    SCHEDULE_DATA=parseScheduleMatrix_(rows);
     updateTvPreviews(); // update TV placeholders after schedule syncs
   }catch(e){if(!silent)console.error('loadScheduleSheet:',e);}
 }
-function parseShedDate(s){const p=(s||'').split('/');return p.length>=3?new Date(+p[2],+p[1]-1,+p[0]):null;}
-function findMemberForPos(pos, targetDate, cosoN){
-  // Filter by stt + coSo
-  let candidates=SCHEDULE_DATA.filter(r=>{
-    if(parseInt(r.stt)!==pos)return false;
-    if(!cosoN)return true;
-    const rc=r.coSo.trim().toLowerCase();
-    return rc===cosoN||rc==='';
-  });
-  // Fallback: if coSo filter yields nothing (e.g. position 4 always has a different coSo),
-  // retry without coSo restriction so it's never skipped
-  if(!candidates.length&&cosoN){
-    candidates=SCHEDULE_DATA.filter(r=>parseInt(r.stt)===pos);
+
+/* Sheet "lịch hủy" dạng ma trận lịch trực trong tháng:
+ *   Cột A = Họ và tên, Cột B = Đơn vị công tác, các cột sau ứng với TỪNG NGÀY trong tháng
+ *   (có 1 hàng ghi nhãn tháng/năm dạng "MM/YYYY", 1 hàng ghi số ngày 1..31, có thể thêm 1 hàng thứ).
+ *   Giá trị mỗi ô: "x" = tham gia hội đồng ngày đó, KHÔNG giới hạn vị trí cụ thể (điền vào vị trí
+ *   còn trống theo thứ tự ưu tiên 1,2,3,4,6). Số (1-6) = tham gia đúng vị trí số đó trong hội đồng.
+ *   Trả về mảng {ten, khoa, coSo:'', _date:Date, pos:number|'x'} — mỗi phần tử là 1 lượt phân công. */
+function parseScheduleMatrix_(rows){
+  if(!rows||!rows.length) return [];
+  // 1) Tìm hàng tiêu đề chứa "Họ và tên" ở cột đầu — hàng này cũng chứa nhãn tháng/năm (MM/YYYY)
+  let nameRowIdx=-1, monthStr='';
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const c0=(rows[i][0]||'').trim().toLowerCase();
+    if(c0.startsWith('họ và tên')){ nameRowIdx=i; break; }
   }
-  if(!candidates.length)return null;
-  const parsed=candidates
-    .map(r=>({...r,_date:parseShedDate(r.ngay)}))
-    .filter(r=>r._date);
-  // Exact date match first
-  const exact=parsed.find(r=>r._date.toDateString()===targetDate.toDateString());
-  if(exact)return exact;
-  // Nearest future date
+  if(nameRowIdx===-1) return [];
+  for(const cell of rows[nameRowIdx]){
+    const m=(cell||'').trim().match(/^(\d{1,2})\/(\d{4})$/);
+    if(m){ monthStr=cell.trim(); break; }
+  }
+  if(!monthStr) return [];
+  const [mmStr,yyyyStr]=monthStr.split('/');
+  const mm=parseInt(mmStr,10), yyyy=parseInt(yyyyStr,10);
+
+  // 2) Tìm hàng chứa số ngày (1..31) — quét vài hàng ngay dưới hàng tên
+  let dayRowIdx=-1;
+  for(let i=nameRowIdx+1;i<Math.min(rows.length,nameRowIdx+4);i++){
+    const nums=(rows[i]||[]).filter(c=>/^\d{1,2}$/.test((c||'').trim()));
+    if(nums.length>=5){ dayRowIdx=i; break; }
+  }
+  if(dayRowIdx===-1) return [];
+
+  // Map: chỉ số cột → ngày (Date) trong tháng
+  const colToDate={};
+  (rows[dayRowIdx]||[]).forEach((cell,ci)=>{
+    const v=(cell||'').trim();
+    if(/^\d{1,2}$/.test(v)){
+      const d=parseInt(v,10);
+      if(d>=1&&d<=31) colToDate[ci]=new Date(yyyy,mm-1,d);
+    }
+  });
+
+  // 3) Hàng dữ liệu bắt đầu ngay sau hàng ngày — nếu hàng kế tiếp là hàng "thứ" (T2..T7,CN) thì bỏ thêm 1 hàng
+  let dataStart=dayRowIdx+1;
+  const nextRow=rows[dataStart]||[];
+  if(!(nextRow[0]||'').trim()){
+    const wd=nextRow.filter(c=>/^(T2|T3|T4|T5|T6|T7|CN)$/i.test((c||'').trim()));
+    if(wd.length>=5) dataStart++;
+  }
+
+  // 4) Đọc từng hàng dữ liệu: cột A = tên, cột B = đơn vị công tác, các cột ngày = "x" hoặc số 1-6
+  const out=[];
+  for(let i=dataStart;i<rows.length;i++){
+    const row=rows[i]||[];
+    const ten=(row[0]||'').trim();
+    if(!ten) continue;
+    const khoa=(row[1]||'').trim();
+    Object.keys(colToDate).forEach(ciStr=>{
+      const ci=parseInt(ciStr,10);
+      const val=(row[ci]||'').trim();
+      if(!val) return;
+      const date=colToDate[ci];
+      if(/^x$/i.test(val)){
+        out.push({ten,khoa,coSo:'',_date:date,pos:'x'});
+      }else if(/^[1-6]$/.test(val)){
+        out.push({ten,khoa,coSo:'',_date:date,pos:parseInt(val,10)});
+      }
+    });
+  }
+  return out;
+}
+
+/* Thứ tự ưu tiên các vị trí được điền tự động từ lịch (vị trí 5 "Nhân viên đưa thuốc" không lấy từ lịch) */
+const SCHEDULE_POS_ORDER=[1,2,3,4,6];
+
+function findMemberForPos(pos, targetDate, cosoN){
+  const sameDate=SCHEDULE_DATA.filter(r=>r._date && r._date.toDateString()===targetDate.toDateString());
+  if(sameDate.length){
+    // 1) Ưu tiên người được điền SỐ đúng bằng vị trí đang cần
+    const fixed=sameDate.find(r=>r.pos===pos);
+    if(fixed) return fixed;
+    // 2) Không có ai điền số cố định cho vị trí này → xét những người điền "x" (không giới hạn vị trí),
+    //    gán theo thứ tự xuất hiện trong Sheet vào các vị trí còn trống (chưa bị chiếm bởi số cố định)
+    //    theo đúng thứ tự ưu tiên 1,2,3,4,6.
+    const filledPositions=new Set(sameDate.filter(r=>typeof r.pos==='number').map(r=>r.pos));
+    const flexible=sameDate.filter(r=>r.pos==='x');
+    const openSlots=SCHEDULE_POS_ORDER.filter(p=>!filledPositions.has(p));
+    const slotIdx=openSlots.indexOf(pos);
+    if(slotIdx!==-1 && flexible[slotIdx]) return flexible[slotIdx];
+  }
+  // Không có phân công đúng ngày → tìm ngày gần nhất (chỉ xét người điền SỐ cố định đúng vị trí)
+  const parsed=SCHEDULE_DATA.filter(r=>r._date && r.pos===pos);
   const future=parsed.filter(r=>r._date>=targetDate).sort((a,b)=>a._date-b._date);
   if(future.length)return future[0];
-  // Nearest past date as fallback
   const past=parsed.filter(r=>r._date<targetDate).sort((a,b)=>b._date-a._date);
   return past.length?past[0]:null;
 }
@@ -3323,7 +3409,7 @@ function updateSignBlocks(members){
 }
 
 /* ── DEPT MANAGEMENT ── */
-let SCHEDULE_DATA = []; // [{stt,ten,khoa,coSo,ngay}] from lịch hủy sheet
+let SCHEDULE_DATA = []; // [{ten,khoa,coSo,_date,pos}] — pos: số 1-6 (vị trí cố định) hoặc 'x' (không giới hạn vị trí), từ Sheet lịch hủy dạng ma trận ngày
 // Khai báo & khôi phục danh sách khoa/trung tâm từ localStorage (tránh lỗi "DEPTS is not defined")
 let DEPTS = [];
 let DEPT_CODES = {};
