@@ -1448,11 +1448,20 @@ function buildKhoaReprintHtml(msbb){
   const r0=rows[0];
   const ngayBB=r0[2]||'', khoa=r0[3]||'';
   const dsXN=r0[21]||'', ddHC=r0[22]||'', ldKhoa=r0[23]||'', thoiGian=r0[24]||'';
-  const tv=[r0[25]||'',r0[26]||'',r0[27]||'',r0[28]||'',r0[29]||'',r0[30]||''];
+  // TV1-TV3 lưu dưới dạng "Tên||Khoa" (nếu có khoa) — tách ra để lấy đúng tên + đơn vị công tác
+  const rawTv=[r0[25]||'',r0[26]||'',r0[27]||'',r0[28]||'',r0[29]||'',r0[30]||''];
+  const tv=[], tvKhoa=['','',''];
+  rawTv.forEach((v,idx)=>{
+    if(idx<3 && v.includes('||')){
+      const [n,k]=v.split('||');
+      tv.push(n||''); tvKhoa[idx]=k||'';
+    }else{
+      tv.push(v);
+    }
+  });
   const gioKT=r0[31]||'', phutKT=r0[32]||'';
   const status=r0[33]||'Chờ duyệt';
   const audit=parseAuditJson(r0[34]);
-  const tvKhoa=[r0[35]||'',r0[36]||'',r0[37]||'']; // Đơn vị công tác của thành viên vị trí 1-3
   const reprintNow=new Date().toLocaleString('vi-VN'); // giống cách lấy "Ngày lưu" khi lưu biên bản
   const nDD=parseNgayVN_(ngayBB);
 
@@ -2278,9 +2287,9 @@ function adminFKhoaClose(){ const l=document.getElementById('adminFKhoaList'); i
 /* ── ROUTER ── */
 const SCREENS=['s-home','s-data','s-report','s-review','s-admin-bb','s-form','s-khoa-portal'];
 const PUBLIC_SCREENS=['s-form','s-khoa-portal']; // Không cần đăng nhập quản trị (khoa dùng cổng đăng nhập riêng)
-/* ── PASSCODE LỚP BẢO VỆ RIÊNG CHO "DỮ LIỆU & CẤU HÌNH" ── */
+/* ── PASSCODE LỚP BẢO VỆ RIÊNG CHO "DỮ LIỆU & CẤU HÌNH" — yêu cầu nhập lại ở MỖI LẦN truy cập ── */
 const DATA_CONFIG_PASSCODE='hat297';
-function isDataConfigUnlocked(){ return sessionStorage.getItem('dataConfigUnlocked')==='1'; }
+let _dataPasscodeBypass=false; // cờ tạm để cho phép go('s-data') đi qua NGAY SAU KHI vừa nhập đúng passcode
 function openDataPasscodeModal(){
   const inp=document.getElementById('dataPasscodeInput');
   if(inp) inp.value='';
@@ -2295,8 +2304,8 @@ function submitDataPasscode(){
   const v=(document.getElementById('dataPasscodeInput').value||'').trim();
   const errEl=document.getElementById('dataPasscodeErr');
   if(v===DATA_CONFIG_PASSCODE){
-    sessionStorage.setItem('dataConfigUnlocked','1');
     closeDataPasscodeModal();
+    _dataPasscodeBypass=true;
     go('s-data');
   }else{
     errEl.textContent='🔴 Mã truy cập không đúng.';
@@ -2307,7 +2316,10 @@ function submitDataPasscode(){
 function go(id){
   if(!isAuthed() && !PUBLIC_SCREENS.includes(id)){ showLogin('admin'); return; }
   if(id==='s-khoa-portal' && !isKhoaAuthed()){ showKhoaLogin(); return; }
-  if(id==='s-data' && !isDataConfigUnlocked()){ openDataPasscodeModal(); return; }
+  if(id==='s-data'){
+    if(_dataPasscodeBypass){ _dataPasscodeBypass=false; }
+    else { openDataPasscodeModal(); return; }
+  }
   SCREENS.forEach(s=>document.getElementById(s).classList.remove('active'));
   document.getElementById('s-login').classList.remove('active');
   document.getElementById(id).classList.add('active');
@@ -3100,7 +3112,7 @@ async function saveForm(){
   autoFillMembers(saveDateISO,khoa);
 
   // ── Xây dựng data rows (trong khi GET đang chạy) ──
-  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì của nhà cung cấp','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích nồng độ (ml)','Thể tích cần hủy (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT','Trạng thái','Audit','Khoa TV1','Khoa TV2','Khoa TV3'];
+  const HEADER=['Mã biên bản (MSBB)','Ngày lưu','Ngày biên bản','Khoa/Trung tâm','STT','Tên thuốc','Tên hoạt chất','Nồng độ/hàm lượng','Số lô','ĐVT','Số lượng bao bì của nhà cung cấp','Bao bì chứa dư phẩm','Dịch truyền pha 1 ĐVT','Nồng độ trong dư phẩm (số)','Đơn vị nồng độ','Thể tích nồng độ (ml)','Thể tích cần hủy (ml)','Tỷ lệ dư phẩm','Điều dưỡng y lệnh','Bác sĩ điều trị','Ghi chú','Dược sĩ XN (họ tên)','Điều dưỡng HC (họ tên)','Lãnh đạo khoa (họ tên)','Thời gian','TV1','TV2','TV3','TV4','TV5','TV6','Giờ KT','Phút KT','Trạng thái','Audit'];
   // Audit: chuỗi JSON dạng mảng các mốc thay đổi trạng thái —
   // [{"thoiGian":"...","hanhDong":"Tạo biên bản","nguoiThucHien":"<khoa>","lyDo":""}]
   // Mỗi khi trạng thái thay đổi (vd. "Đề nghị hủy", "Đã duyệt"...), Apps Script cần ĐỌC giá trị JSON hiện có,
@@ -3134,14 +3146,18 @@ async function saveForm(){
       i===0?document.getElementById('signDd')?.value?.trim()||'':'',
       i===0?document.getElementById('signLd')?.value?.trim()||'':'',
       i===0?document.getElementById('thoiGian')?.value||'':'',
-      ...(i===0?[...document.querySelectorAll('.tv')].map(el=>el.value||''):Array(6).fill('')),
+      // TV1-TV3: nhúng luôn đơn vị công tác vào chính giá trị lưu (định dạng "Tên||Khoa"),
+      // KHÔNG dùng thêm cột riêng — ô nhập trên form vẫn chỉ hiển thị tên, còn "||Khoa" chỉ
+      // ghi kèm lúc lưu để dùng khi xem/in lại. TV4-TV6 lưu tên như bình thường.
+      ...(i===0?[...document.querySelectorAll('.tv')].map((el,idx)=>{
+        const name=el.value||'';
+        if(idx<3){ const khoa=getTvKhoaByPos(idx+1); return khoa?`${name}||${khoa}`:name; }
+        return name;
+      }):Array(6).fill('')),
       i===0?document.getElementById('gioKT')?.value||'':'',
       i===0?document.getElementById('phutKT')?.value||'':'',
       'Chờ duyệt',
-      auditInit,
-      i===0?getTvKhoaByPos(1):'',
-      i===0?getTvKhoaByPos(2):'',
-      i===0?getTvKhoaByPos(3):'']);
+      auditInit]);
   });
 
   // ── Đợi barcode từ server (thường đã xong rồi vì chạy song song) ──
