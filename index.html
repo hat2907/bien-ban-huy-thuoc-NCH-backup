@@ -584,6 +584,40 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
   </div>
 </div>
 
+<!-- ══════════ MODAL: Danh sách thông báo (chuông trên trang biên bản) ══════════ -->
+<div class="modal-overlay" id="announceModalOverlay">
+  <div class="modal-box modal-sm">
+    <div class="modal-topbar">
+      <button class="btn btn-gh" onclick="closeAnnounceModal()">✕ Đóng</button>
+      <span class="pg-title">🔔 Thông báo</span>
+      <span></span>
+    </div>
+    <div class="modal-scroll" id="announceModalBody" style="max-height:70vh;"></div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: Đăng thông báo (vai Hội đồng hủy thuốc) ══════════ -->
+<div class="modal-overlay" id="announceCreateModalOverlay">
+  <div class="modal-box modal-sm">
+    <div class="modal-topbar">
+      <button class="btn btn-gh" onclick="closeAnnounceCreateModal()">✕ Đóng</button>
+      <span class="pg-title">📢 Đăng thông báo mới</span>
+      <span></span>
+    </div>
+    <div class="modal-scroll">
+      <label style="display:block;font-size:12.5px;color:#555;margin-bottom:5px;font-family:Arial,sans-serif;">Tiêu đề</label>
+      <input type="text" id="announceTitle" placeholder="Nhập tiêu đề thông báo" style="width:100%;padding:10px 12px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;margin-bottom:14px;">
+      <label style="display:block;font-size:12.5px;color:#555;margin-bottom:5px;font-family:Arial,sans-serif;">Nội dung</label>
+      <textarea id="announceContent" rows="4" placeholder="Nhập nội dung thông báo…" style="width:100%;padding:10px 12px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;resize:vertical;margin-bottom:14px;"></textarea>
+      <label style="display:block;font-size:12.5px;color:#555;margin-bottom:5px;font-family:Arial,sans-serif;">Ảnh minh hoạ (không bắt buộc)</label>
+      <input type="text" id="announceImgUrl" placeholder="Dán đường link ảnh (URL)…" style="width:100%;padding:10px 12px;border:1.5px solid #d0d5dd;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;margin-bottom:6px;">
+      <p style="font-size:11px;color:#999;margin:0 0 14px;font-family:Arial,sans-serif;">💡 Dán link ảnh công khai (vd. ảnh từ Google Drive đã bật chia sẻ, Imgur…). Chưa hỗ trợ tải ảnh trực tiếp từ máy.</p>
+      <div id="announceCreateErr" class="login-err"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:6px;" onclick="submitAnnounce()" id="btnSubmitAnnounce">📨 Đăng thông báo</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ S-HOME ══════════ -->
 <div class="scr" id="s-home">
   <div class="adm-hdr" style="position:relative;">
@@ -591,6 +625,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <h1>Hệ thống biên bản hủy bao bì TXTT</h1>
     <div class="sub">BM7/QTQL.D.22.1</div>
     <div style="position:absolute;top:20px;right:30px;display:flex;gap:10px;">
+      <button onclick="openAnnounceCreateModal()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 12px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">📢 Đăng thông báo</button>
       <button onclick="go('s-data')" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 12px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">💾 Dữ liệu &amp; Cấu hình</button>
       <button onclick="doLogout()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 12px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">⎋ Đăng xuất</button>
     </div>
@@ -671,6 +706,11 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
           <div style="font-size:12.5px;font-weight:700;color:var(--ac);margin-bottom:5px;">🧹 CSDL làm sạch</div>
           <input type="text" id="outCleanSheetUrl" style="display:none;">
           <div id="outCleanStatus" class="sbadge">⚪ Chưa tải</div>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--ac);margin-bottom:5px;">🔔 Thông báo</div>
+          <input type="text" id="announceUrl" style="display:none;">
+          <div id="announceStatus" class="sbadge">⚪ Chưa tải</div>
         </div>
       </div>
     </div>
@@ -911,6 +951,9 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <button class="fbt add" id="btnBackToManage" style="display:none;" onclick="handleFormBarNavBtn()">🔙 Về trang quản lý</button>
     <button class="fbt prt" id="btnPrint" onclick="window.print()" disabled>🖨️ In/PDF</button>
     <button class="new-btn" id="btnNew" onclick="resetForm()">📋 Biên bản mới</button>
+    <button class="fbt" id="btnAnnounce" onclick="openAnnounceModal()" style="background:#374151;color:#fff;position:relative;margin-left:auto;">
+      🔔<span id="announceBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:#e11d48;color:#fff;border-radius:50%;font-size:9px;font-weight:700;min-width:15px;height:15px;line-height:15px;text-align:center;padding:0 2px;"></span>
+    </button>
   </div>
 
   <!-- Màn hình xám mờ + loading khi đang lưu biên bản -->
@@ -1467,7 +1510,8 @@ function buildKhoaReprintHtml(msbb){
 
   let bodyRows='';
   rows.forEach((r,i)=>{
-    const ndVal = r[13]!==''&&r[13]!=null ? `${r[13]}${(r[15]!==''&&r[15]!=null)?'/'+r[15]:''} ${r[14]||''}` : '';
+    // Đúng định dạng như bản gốc (xem syncNdcPsr): "<nồng độ> <đơn vị> / <thể tích> ml"
+    const ndVal = (r[13]!==''&&r[13]!=null) ? `${r[13]} ${r[14]||''} / ${(r[15]!==''&&r[15]!=null)?r[15]:'1'} ml` : '';
     bodyRows+=`<tr>
       <td class="stt-col">${i+1}</td>
       <td>${r[6]||''}</td>
@@ -2337,7 +2381,7 @@ function go(id){
       if(id==='s-form') setSyncDate();
     });
   }
-  if(id==='s-form') { updateFormBarNavBtn(); prefillKhoaFieldIfLoggedIn(); }
+  if(id==='s-form') { updateFormBarNavBtn(); prefillKhoaFieldIfLoggedIn(); updateAnnounceBadge(); }
   else if(id==='s-data') { silentRefreshAll(); }
   else if(id==='s-report') { silentRefreshAll().then(()=>{ updateRptSourceMini(); }); updateRptSourceMini(); }
   else if(id==='s-khoa-portal') { loadKhoaPortalList(); }
@@ -2387,6 +2431,7 @@ async function refreshConnections(){
   if(localStorage.getItem('outSheetUrl')) p.push(loadOutSheet(true,'raw'));
   if(localStorage.getItem('outCleanSheetUrl')) p.push(loadOutSheet(true,'clean'));
   if(localStorage.getItem('scheduleUrl')) p.push(loadScheduleSheet(true));
+  if(localStorage.getItem('announceUrl')) p.push(loadAnnouncements(true));
   await Promise.allSettled(p);
 }
 
@@ -2446,6 +2491,7 @@ async function applyConfig(silent){
       out_url:       {ls:'outSheetUrl',   el:'outSheetUrl'},
       out_clean_url: {ls:'outCleanSheetUrl', el:'outCleanSheetUrl'},
       schedule_url:  {ls:'scheduleUrl',   el:'scheduleUrl'},
+      announce_url:  {ls:'announceUrl',   el:'announceUrl'},
     };
     let loaded=0;
     for(const [key,{ls,el}] of Object.entries(MAP)){
@@ -3534,6 +3580,115 @@ function exportRptXLSX(){
 }
 
 /* ── LỊCH HỦY THUỐC (schedule) ── */
+/* ── THÔNG BÁO (chuông 🔔 trên trang biên bản; đăng bởi vai Hội đồng hủy thuốc) ── */
+let ANNOUNCEMENTS=[]; // [{thoiGian,tieuDe,noiDung,anhUrl,nguoiDang}] — mới nhất trước
+
+async function loadAnnouncements(silent){
+  const raw=silent?localStorage.getItem('announceUrl'):(document.getElementById('announceUrl')?.value||'').trim();
+  if(!raw) return;
+  const u=buildCsvUrl(raw); if(!u) return;
+  if(!silent) setSt('announceStatus','ld','⏳ Đang tải…');
+  try{
+    const res=await fetch(u); if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows=parseCsv(await res.text());
+    // Cột: Thời gian, Tiêu đề, Nội dung, Ảnh (URL), Người đăng
+    ANNOUNCEMENTS=rows.slice(1)
+      .filter(r=>r.some(c=>c))
+      .map(r=>({thoiGian:(r[0]||'').trim(),tieuDe:(r[1]||'').trim(),noiDung:(r[2]||'').trim(),anhUrl:(r[3]||'').trim(),nguoiDang:(r[4]||'').trim()}))
+      .reverse(); // mới đăng gần nhất lên đầu (Sheet ghi theo thứ tự thêm dòng, cũ→mới)
+    if(!silent) setSt('announceStatus','ok',`✅ ${ANNOUNCEMENTS.length} thông báo — ${new Date().toLocaleTimeString('vi-VN')}`);
+    updateAnnounceBadge();
+  }catch(e){
+    if(!silent) setSt('announceStatus','err','🔴 '+e.message);
+  }
+}
+
+function updateAnnounceBadge(){
+  const badge=document.getElementById('announceBadge');
+  if(!badge) return;
+  const lastSeen=localStorage.getItem('lastSeenAnnounce')||'';
+  const unseen=ANNOUNCEMENTS.filter(a=>a.thoiGian && a.thoiGian>lastSeen).length;
+  if(unseen>0){ badge.textContent=unseen>9?'9+':String(unseen); badge.style.display='flex'; }
+  else{ badge.style.display='none'; }
+}
+
+function announceCardHtml(a){
+  const img=a.anhUrl?`<img src="${a.anhUrl}" style="max-width:100%;border-radius:8px;margin-top:8px;display:block;" onerror="this.style.display='none';">`:'';
+  return `<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
+    <div style="font-weight:700;font-size:14px;color:var(--ac);font-family:Arial,sans-serif;margin-bottom:4px;">${a.tieuDe||'(Không tiêu đề)'}</div>
+    <div style="font-size:11px;color:#999;font-family:Arial,sans-serif;margin-bottom:8px;">🕘 ${a.thoiGian||''}${a.nguoiDang?' — '+a.nguoiDang:''}</div>
+    <div style="font-size:13px;color:#333;font-family:Arial,sans-serif;white-space:pre-wrap;line-height:1.6;">${(a.noiDung||'').replace(/</g,'&lt;')}</div>
+    ${img}
+  </div>`;
+}
+
+function openAnnounceModal(){
+  const body=document.getElementById('announceModalBody');
+  body.innerHTML = ANNOUNCEMENTS.length
+    ? ANNOUNCEMENTS.map(announceCardHtml).join('')
+    : '<div style="text-align:center;color:#999;font-family:Arial,sans-serif;padding:30px 0;">Chưa có thông báo nào.</div>';
+  document.getElementById('announceModalOverlay').classList.add('show');
+  // Đánh dấu đã xem — dùng thời gian của thông báo mới nhất
+  if(ANNOUNCEMENTS.length) localStorage.setItem('lastSeenAnnounce', ANNOUNCEMENTS[0].thoiGian||'');
+  updateAnnounceBadge();
+  loadAnnouncements(true).then(()=>{
+    // Nếu vừa tải được thông báo mới hơn trong lúc mở, hiển thị lại danh sách
+    body.innerHTML = ANNOUNCEMENTS.length
+      ? ANNOUNCEMENTS.map(announceCardHtml).join('')
+      : '<div style="text-align:center;color:#999;font-family:Arial,sans-serif;padding:30px 0;">Chưa có thông báo nào.</div>';
+  });
+}
+function closeAnnounceModal(){
+  document.getElementById('announceModalOverlay').classList.remove('show');
+}
+
+/* ── Đăng thông báo mới (vai Hội đồng hủy thuốc) ── */
+function openAnnounceCreateModal(){
+  document.getElementById('announceTitle').value='';
+  document.getElementById('announceContent').value='';
+  document.getElementById('announceImgUrl').value='';
+  document.getElementById('announceCreateErr').classList.remove('show');
+  document.getElementById('announceCreateModalOverlay').classList.add('show');
+}
+function closeAnnounceCreateModal(){
+  document.getElementById('announceCreateModalOverlay').classList.remove('show');
+}
+async function submitAnnounce(){
+  const tieuDe=(document.getElementById('announceTitle').value||'').trim();
+  const noiDung=(document.getElementById('announceContent').value||'').trim();
+  const anhUrl=(document.getElementById('announceImgUrl').value||'').trim();
+  const errEl=document.getElementById('announceCreateErr');
+  errEl.classList.remove('show');
+  if(!tieuDe||!noiDung){
+    errEl.textContent='⚠️ Vui lòng nhập đầy đủ tiêu đề và nội dung.';
+    errEl.classList.add('show');
+    return;
+  }
+  const btn=document.getElementById('btnSubmitAnnounce');
+  const orig=btn.textContent;
+  btn.disabled=true; btn.textContent='⏳ Đang đăng…';
+  const thoiGian=new Date().toLocaleString('vi-VN');
+  try{
+    const result=await postToScript_({
+      action:'addAnnouncement', thoiGian, tieuDe, noiDung, anhUrl,
+      nguoiDang:'Hội đồng hủy thuốc'
+    });
+    if(result.status!=='ok'){
+      errEl.textContent='🔴 Chưa đăng được: '+(result.message||'Lỗi không xác định.');
+      errEl.classList.add('show');
+      return;
+    }
+    ANNOUNCEMENTS.unshift({thoiGian,tieuDe,noiDung,anhUrl,nguoiDang:'Hội đồng hủy thuốc'});
+    closeAnnounceCreateModal();
+    alert('✅ Đã đăng thông báo.');
+  }catch(e){
+    errEl.textContent='🔴 Lỗi: '+e.message;
+    errEl.classList.add('show');
+  }finally{
+    btn.disabled=false; btn.textContent=orig;
+  }
+}
+
 async function loadScheduleSheet(silent){
   const raw=silent?localStorage.getItem('scheduleUrl'):(document.getElementById('scheduleUrl')?.value||'').trim();
   if(!raw)return;
