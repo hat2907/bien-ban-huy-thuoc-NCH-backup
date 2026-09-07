@@ -252,7 +252,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--acd),var(--ac));font-family:Arial,sans-serif;padding:20px;transition:background .35s ease;}
 .login-wrap.theme-khoa{background:linear-gradient(135deg,#1a5c3e,#2fa876);}
 .login-wrap.theme-admin{background:linear-gradient(135deg,var(--acd),var(--ac));}
-.login-card{background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.25);padding:0 34px 28px;width:100%;max-width:360px;overflow:hidden;}
+.login-card{position:relative;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.25);padding:0 34px 28px;width:100%;max-width:360px;overflow:hidden;}
 .login-tabs{display:flex;margin:0 -34px 22px;}
 .login-tab{flex:1;border:none;background:#f0f2f5;color:#888;font-weight:700;font-size:12.5px;font-family:Arial,sans-serif;padding:14px 6px;cursor:pointer;transition:background .2s,color .2s;}
 .login-tab:hover{background:#e6e9ee;}
@@ -386,6 +386,9 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 
 <!-- ══════════ S-LOGIN ══════════ -->
 <div class="scr active" id="s-login">
+  <button onclick="openAnnounceModal()" style="position:fixed;top:18px;right:18px;background:#374151;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;color:#fff;font-size:15px;z-index:60;box-shadow:0 2px 8px rgba(0,0,0,.25);">
+    <span style="position:relative;display:inline-block;">🔔<span class="announce-badge" style="display:none;position:absolute;top:-8px;right:-9px;background:#e11d48;color:#fff;border-radius:9px;font-size:9px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 0 2px #374151;"></span></span>
+  </button>
   <div class="login-wrap theme-khoa" id="loginWrap">
     <div class="login-card">
       <div class="login-tabs">
@@ -443,7 +446,10 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <div class="hosp">Bệnh viện Nhi Trung ương</div>
     <h1 id="khoaPortalTitle">Khoa/Trung tâm</h1>
     <div class="sub">Quản lý biên bản hủy thuốc theo khoa</div>
-    <div style="position:absolute;top:20px;right:30px;display:flex;gap:10px;">
+    <div style="position:absolute;top:20px;right:30px;display:flex;gap:10px;align-items:center;">
+      <button onclick="openAnnounceModal()" style="background:#374151;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;color:#fff;font-size:14px;position:relative;">
+        <span style="position:relative;display:inline-block;">🔔<span class="announce-badge" style="display:none;position:absolute;top:-8px;right:-9px;background:#e11d48;color:#fff;border-radius:9px;font-size:9px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 0 2px #374151;"></span></span>
+      </button>
       <button onclick="goKhoaForm()" style="background:#ff9f1c;color:#1a1200;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;">📝 Tạo biên bản hủy thuốc mới</button>
       <button onclick="doKhoaLogout()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 14px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;">⎋ Đăng xuất</button>
     </div>
@@ -588,8 +594,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 <div class="modal-overlay" id="announceModalOverlay">
   <div class="modal-box modal-sm">
     <div class="modal-topbar">
-      <button class="btn btn-gh" onclick="closeAnnounceModal()">✕ Đóng</button>
-      <span class="pg-title">🔔 Thông báo</span>
+      <button class="btn" style="background:var(--ac);color:#fff;" onclick="closeAnnounceModal()">✕ Đóng</button>
+      <span class="pg-title">Thông báo</span>
       <span></span>
     </div>
     <div class="modal-scroll" id="announceModalBody" style="max-height:70vh;"></div>
@@ -955,8 +961,8 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
     <button class="fbt add" id="btnBackToManage" style="display:none;" onclick="handleFormBarNavBtn()">🔙 Về trang quản lý</button>
     <button class="fbt prt" id="btnPrint" onclick="window.print()" disabled>🖨️ In/PDF</button>
     <button class="new-btn" id="btnNew" onclick="resetForm()">📋 Biên bản mới</button>
-    <button class="fbt" id="btnAnnounce" onclick="openAnnounceModal()" style="background:#374151;color:#fff;position:relative;margin-left:auto;padding:6px 12px;">
-      <span style="position:relative;display:inline-block;">🔔<span id="announceBadge" style="display:none;position:absolute;top:-8px;right:-9px;background:#e11d48;color:#fff;border-radius:9px;font-size:9px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 0 2px #374151;"></span></span>
+    <button class="fbt" onclick="openAnnounceModal()" style="background:#374151;color:#fff;position:relative;margin-left:auto;padding:6px 12px;">
+      <span style="position:relative;display:inline-block;">🔔<span class="announce-badge" style="display:none;position:absolute;top:-8px;right:-9px;background:#e11d48;color:#fff;border-radius:9px;font-size:9px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 0 2px #374151;"></span></span>
     </button>
   </div>
 
@@ -2434,7 +2440,7 @@ function go(id){
   if(id==='s-form') { updateFormBarNavBtn(); prefillKhoaFieldIfLoggedIn(); updateAnnounceBadge(); }
   else if(id==='s-data') { silentRefreshAll(); }
   else if(id==='s-report') { silentRefreshAll().then(()=>{ updateRptSourceMini(); }); updateRptSourceMini(); }
-  else if(id==='s-khoa-portal') { loadKhoaPortalList(); }
+  else if(id==='s-khoa-portal') { loadKhoaPortalList(); updateAnnounceBadge(); }
   else if(id==='s-review') { setTimeout(()=>document.getElementById('reviewMsbbInput')?.focus(),50); syncReviewData(); }
   else if(id==='s-admin-bb') { loadAdminBBList(); }
 }
@@ -3666,33 +3672,48 @@ async function loadAnnouncements(silent){
 function normalizeImageUrl(url){
   url=(url||'').trim();
   if(!url) return '';
+  // Dùng endpoint "thumbnail" của Google Drive thay vì "uc?export=view" — endpoint cũ ngày càng
+  // hay bị chặn/không hiển thị khi nhúng trực tiếp bằng <img> (Google hạn chế hotlink kiểu này),
+  // trong khi endpoint thumbnail ổn định hơn nhiều cho việc nhúng ảnh trực tiếp.
   let m=url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-  if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
-  if(url.includes('drive.google.com') && !url.includes('uc?export=view')){
+  if(m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w2000`;
+  if(url.includes('drive.google.com') && !url.includes('thumbnail?')){
     m=url.match(/[?&]id=([^&]+)/);
-    if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+    if(m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w2000`;
   }
   return url;
 }
+/* Định dạng thay thế (uc?export=view) — dùng làm phương án dự phòng thứ 2 nếu endpoint thumbnail lỗi */
+function driveAltUrl(url){
+  url=(url||'').trim();
+  if(!url) return '';
+  let m=url.match(/drive\.google\.com\/file\/d\/([^/]+)/) || url.match(/[?&]id=([^&]+)/);
+  if(m && url.includes('drive.google.com')) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return '';
+}
 
 function updateAnnounceBadge(){
-  const badge=document.getElementById('announceBadge');
-  if(!badge) return;
+  const badges=document.querySelectorAll('.announce-badge');
+  if(!badges.length) return;
   // Đếm theo SỐ LƯỢNG thông báo (không so sánh chuỗi ngày giờ dạng "d/m/yyyy, hh:mm:ss" —
   // so sánh chuỗi kiểu đó sai thứ tự thời gian thực, vd "10/9" bị coi nhỏ hơn "6/9" vì so ký tự đầu
   // '1' < '6', gây đếm sai số thông báo chưa xem đúng như lỗi đã gặp).
   const lastSeenCount=parseInt(localStorage.getItem('lastSeenAnnounceCount')||'0',10);
   const unseen=Math.max(0, ANNOUNCEMENTS.length-lastSeenCount);
-  if(unseen>0){ badge.textContent=unseen>9?'9+':String(unseen); badge.style.display='flex'; }
-  else{ badge.style.display='none'; }
+  badges.forEach(badge=>{
+    if(unseen>0){ badge.textContent=unseen>9?'9+':String(unseen); badge.style.display='flex'; }
+    else{ badge.style.display='none'; }
+  });
 }
 
 function announceCardHtml(a){
   const imgSrc=normalizeImageUrl(a.anhUrl);
-  const img=imgSrc?`<img src="${imgSrc}" style="max-width:100%;border-radius:8px;margin-top:8px;display:block;" onerror="this.style.display='none';">`:'';
+  const altSrc=driveAltUrl(a.anhUrl); // định dạng thay thế (uc?export=view) — thử tiếp nếu thumbnail lỗi
+  const img=imgSrc?`<img src="${imgSrc}" style="max-width:100%;border-radius:8px;margin-top:8px;display:block;" data-alt="${(altSrc||'').replace(/"/g,'&quot;')}" data-tried="0" onerror="const t=parseInt(this.dataset.tried||'0'); if(t===0 && this.dataset.alt){ this.dataset.tried='1'; this.src=this.dataset.alt; } else { this.style.display='none'; }">`:'';
+  const ngay=(a.thoiGian||'').split(',')[0].trim(); // chỉ lấy phần NGÀY, bỏ giờ:phút:giây
   return `<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
     <div style="font-weight:700;font-size:14px;color:var(--ac);font-family:Arial,sans-serif;margin-bottom:4px;">${a.tieuDe||'(Không tiêu đề)'}</div>
-    <div style="font-size:11px;color:#999;font-family:Arial,sans-serif;margin-bottom:8px;">🕘 ${a.thoiGian||''}${a.nguoiDang?' — '+a.nguoiDang:''}</div>
+    <div style="font-size:11px;color:#999;font-family:Arial,sans-serif;margin-bottom:8px;">${ngay}${a.nguoiDang?' — '+a.nguoiDang:''}</div>
     <div style="font-size:13px;color:#333;font-family:Arial,sans-serif;white-space:pre-wrap;line-height:1.6;">${(a.noiDung||'').replace(/</g,'&lt;')}</div>
     ${img}
   </div>`;
