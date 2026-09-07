@@ -1132,6 +1132,38 @@ const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ
 // Nếu admin đổi URL cấu hình qua nút "Đổi cấu hình" (promptChangeConfigUrl), giá trị được lưu ở đây
 // và ưu tiên áp dụng CHỈ TRÊN TRÌNH DUYỆT NÀY — không ảnh hưởng tới thiết bị khác.
 let RUNTIME_CONFIG_URL_OVERRIDE = localStorage.getItem('configUrlOverride') || '';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   KHAI BÁO SỚM các biến dữ liệu dùng chung — PHẢI đứng trước checkRoute()/go()
+   vì checkRoute() có thể khởi động các luồng đồng bộ (silentRefreshAll…) ngay
+   khi trang tải; nếu các biến này khai báo ở cuối file, có nguy cơ gặp lỗi
+   "Cannot access 'X' before initialization" (TDZ) khi đồng bộ chạy trước khi
+   script chạy tới dòng khai báo — đây chính là lỗi đã gặp trên thực tế.
+   ═══════════════════════════════════════════════════════════════════════ */
+const HA={
+  tenThuoc:["ten thuoc","tên thuốc"],
+  hoatChat:["ten hoat chat","hoat chat","tên hoạt chất","hoạt chất"],
+  nongDo:["nong do","nong do/ham luong","nồng độ","nồng độ/hàm lượng"],
+  soLo:["so lo","số lô"],
+  dvt:["dvt","don vi tinh","đvt","đơn vị tính"],
+  hamLuongDVT:["ham luong trong dvt","hàm lượng trong đvt","ham luong dvt"],
+  donViHamLuong:["don vi ham luong","đơn vị hàm lượng"],
+  theTichDVT:["the tich trong dvt","thể tích trong đvt","the tich dvt"],
+  donViTheTich:["don vi the tich","đơn vị thể tích"]
+};
+let OUT_DATA_RAW=[];    // CSDL thô — nhập trực tiếp từ biên bản hủy
+let OUT_DATA_CLEAN=[];  // CSDL làm sạch — cùng cấu trúc, đã được rà soát/làm sạch
+let ANNOUNCEMENTS=[]; // [{thoiGian,tieuDe,noiDung,anhUrl,nguoiDang}] — mới nhất trước
+let SCHEDULE_DATA = []; // [{ten,khoa,coSo,_date,pos}] — pos: số 1-6 (vị trí cố định) hoặc 'x' (không giới hạn vị trí), từ Sheet lịch hủy dạng ma trận ngày
+// Khai báo & khôi phục danh sách khoa/trung tâm từ localStorage (tránh lỗi "DEPTS is not defined")
+let DEPTS = [];
+let DEPT_CODES = {};
+let DEPT_COSO = {};
+let DEPT_PASS = {}; // mật khẩu đăng nhập theo khoa — cột "Mật khẩu" trong Sheet danh sách khoa
+try{ DEPTS = JSON.parse(localStorage.getItem('depts')||'[]'); }catch(e){ DEPTS = []; }
+try{ DEPT_CODES = JSON.parse(localStorage.getItem('deptCodes')||'{}'); }catch(e){ DEPT_CODES = {}; }
+try{ DEPT_COSO = JSON.parse(localStorage.getItem('deptCoSo')||'{}'); }catch(e){ DEPT_COSO = {}; }
+try{ DEPT_PASS = JSON.parse(localStorage.getItem('deptPass')||'{}'); }catch(e){ DEPT_PASS = {}; }
 // Tài khoản đăng nhập mặc định (sẽ bị ghi đè bởi cấu hình trung tâm — khoá login_user / login_pass — nếu có)
 let LOGIN_USER = localStorage.getItem('loginUser') || 'admin';
 let LOGIN_PASS = localStorage.getItem('loginPass') || '123456';
@@ -2382,7 +2414,17 @@ function go(id){
       if(id==='s-form'&&!document.querySelectorAll('#tbody tr:not(.note-row)').length){
         addRow();addRow();addRow();
       }
-      if(id==='s-form') setSyncDate();
+      if(id==='s-form'){
+        setSyncDate();
+        // Badge "Đã đồng bộ" ở thanh panel trước đây CHỈ được cập nhật khi riêng danh mục thuốc
+        // tải thành công (connectSheet) — nếu nguồn đó lỗi/chậm, badge bị "kẹt" mãi ở "Đang tải…"
+        // dù các nguồn dữ liệu khác đã xong. Giờ luôn cập nhật badge khi TOÀN BỘ quá trình đồng bộ
+        // (hoặc lớp bảo hiểm 12 giây) đã hoàn tất, phản ánh đúng trạng thái thực tế.
+        const sb=document.getElementById('syncBadge');
+        if(sb && sb.textContent.includes('Đang tải')){
+          updateSyncBadge('ok',`Đã đồng bộ ${new Date().toLocaleTimeString('vi-VN')}`);
+        }
+      }
     });
   }
   if(id==='s-form') { updateFormBarNavBtn(); prefillKhoaFieldIfLoggedIn(); updateAnnounceBadge(); }
@@ -2498,12 +2540,15 @@ async function applyConfig(silent){
       announce_url:  {ls:'announceUrl',   el:'announceUrl'},
     };
     let loaded=0;
+    const missingKeys=[];
     for(const [key,{ls,el}] of Object.entries(MAP)){
       if(cfg[key]){
         localStorage.setItem(ls, cfg[key]);
         const inp=document.getElementById(el);
         if(inp) inp.value=cfg[key];
         loaded++;
+      }else{
+        missingKeys.push(key);
       }
     }
     // Handle script_url separately (not a fetch target, just store & show status)
@@ -2517,10 +2562,10 @@ async function applyConfig(silent){
     if(cfg.login_user){ LOGIN_USER=cfg.login_user; localStorage.setItem('loginUser',cfg.login_user); }
     if(cfg.login_pass){ LOGIN_PASS=cfg.login_pass; localStorage.setItem('loginPass',cfg.login_pass); }
     localStorage.setItem('configUrl', raw);
-    if(!silent){
-      document.getElementById('configUrl').value=raw;
-      setSt('configStatus','ok',`✅ Đã tải ${loaded}/${Object.keys(MAP).length} cài đặt — ${new Date().toLocaleTimeString('vi-VN')}`);
-    }
+    if(!silent){ document.getElementById('configUrl').value=raw; }
+    // Luôn cập nhật badge (kể cả khi đồng bộ nền/silent), và liệt kê rõ các key CÒN THIẾU trong
+    // Sheet cấu hình trung tâm để dễ dò lỗi (vd thiếu dòng "announce_url" → thông báo không tải được).
+    setSt('configStatus','ok',`✅ Đã tải ${loaded}/${Object.keys(MAP).length} cài đặt — ${new Date().toLocaleTimeString('vi-VN')}${missingKeys.length?` (thiếu: ${missingKeys.join(', ')})`:''}`);
     // Refresh all connections with the newly populated URLs
     await refreshConnections();
   }catch(e){
@@ -2712,17 +2757,6 @@ function parseCsv(text){
   while((m=re.exec(text))!==null){let v=m[1];if(v.startsWith('"'))v=v.slice(1,-1).replace(/""/g,'"');row.push(v.trim());if(m[2]!==','){if(row.some(c=>c!==''))rows.push(row);row=[];}if(m[2]==='')break;}
   return rows;
 }
-const HA={
-  tenThuoc:["ten thuoc","tên thuốc"],
-  hoatChat:["ten hoat chat","hoat chat","tên hoạt chất","hoạt chất"],
-  nongDo:["nong do","nong do/ham luong","nồng độ","nồng độ/hàm lượng"],
-  soLo:["so lo","số lô"],
-  dvt:["dvt","don vi tinh","đvt","đơn vị tính"],
-  hamLuongDVT:["ham luong trong dvt","hàm lượng trong đvt","ham luong dvt"],
-  donViHamLuong:["don vi ham luong","đơn vị hàm lượng"],
-  theTichDVT:["the tich trong dvt","thể tích trong đvt","the tich dvt"],
-  donViTheTich:["don vi the tich","đơn vị thể tích"]
-};
 function norm(s){return(s||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9/ ]/g,"").trim();}
 /* Exact match wins first (across ALL keys) to avoid collisions like
    "Đơn vị hàm lượng" containing the substring "hàm lượng" which would
@@ -3360,8 +3394,6 @@ function resetForm(){
 }
 
 /* ── THEO DÕI CẤP PHÁT (BM8) ── */
-let OUT_DATA_RAW=[];    // CSDL thô — nhập trực tiếp từ biên bản hủy
-let OUT_DATA_CLEAN=[];  // CSDL làm sạch — cùng cấu trúc, đã được rà soát/làm sạch
 
 /* source: 'raw' | 'clean' */
 async function loadOutSheet(silent, source){
@@ -3595,7 +3627,6 @@ function exportRptXLSX(){
 
 /* ── LỊCH HỦY THUỐC (schedule) ── */
 /* ── THÔNG BÁO (chuông 🔔 trên trang biên bản; đăng bởi vai Hội đồng hủy thuốc) ── */
-let ANNOUNCEMENTS=[]; // [{thoiGian,tieuDe,noiDung,anhUrl,nguoiDang}] — mới nhất trước
 
 async function loadAnnouncements(silent){
   const raw=silent?localStorage.getItem('announceUrl'):(document.getElementById('announceUrl')?.value||'').trim();
@@ -3970,16 +4001,6 @@ function updateSignBlocks(members){
 }
 
 /* ── DEPT MANAGEMENT ── */
-let SCHEDULE_DATA = []; // [{ten,khoa,coSo,_date,pos}] — pos: số 1-6 (vị trí cố định) hoặc 'x' (không giới hạn vị trí), từ Sheet lịch hủy dạng ma trận ngày
-// Khai báo & khôi phục danh sách khoa/trung tâm từ localStorage (tránh lỗi "DEPTS is not defined")
-let DEPTS = [];
-let DEPT_CODES = {};
-let DEPT_COSO = {};
-let DEPT_PASS = {}; // mật khẩu đăng nhập theo khoa — cột "Mật khẩu" trong Sheet danh sách khoa
-try{ DEPTS = JSON.parse(localStorage.getItem('depts')||'[]'); }catch(e){ DEPTS = []; }
-try{ DEPT_CODES = JSON.parse(localStorage.getItem('deptCodes')||'{}'); }catch(e){ DEPT_CODES = {}; }
-try{ DEPT_COSO = JSON.parse(localStorage.getItem('deptCoSo')||'{}'); }catch(e){ DEPT_COSO = {}; }
-try{ DEPT_PASS = JSON.parse(localStorage.getItem('deptPass')||'{}'); }catch(e){ DEPT_PASS = {}; }
 
 function renderDeptList(){
   const ul = document.getElementById('deptList');
