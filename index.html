@@ -1528,6 +1528,16 @@ function parseNgayVN_(s){
   return p.length>=3 ? {d:p[0],m:p[1],y:p[2]} : {d:'',m:'',y:''};
 }
 
+/* Hiển thị số dạng "gọn": bỏ các số 0 thập phân thừa (vd "2.00"→"2", "2.50"→"2.5") —
+   dùng cho các ô số đọc lại từ Sheet có thể bị Google Sheets tự format thêm ".00" khi xuất CSV. */
+function fmtNumSmart_(raw){
+  if(raw===''||raw==null) return '';
+  const s=String(raw).trim().replace(',','.');
+  const n=parseFloat(s);
+  if(isNaN(n)) return raw;
+  return String(n);
+}
+
 function buildKhoaReprintHtml(msbb){
   const rows=OUT_DATA_RAW.filter(r=>r[0]===msbb)
     .sort((a,b)=>(parseInt(a[4])||0)-(parseInt(b[4])||0));
@@ -1555,7 +1565,10 @@ function buildKhoaReprintHtml(msbb){
   let bodyRows='';
   rows.forEach((r,i)=>{
     // Đúng định dạng như bản gốc (xem syncNdcPsr): "<nồng độ> <đơn vị> / <thể tích> ml"
-    const ndVal = (r[13]!==''&&r[13]!=null) ? `${r[13]} ${r[14]||''} / ${(r[15]!==''&&r[15]!=null)?r[15]:'1'} ml` : '';
+    // Mẫu số (thể tích) có thể bị Google Sheets format thành "2.00" khi xuất CSV — dùng fmtNumSmart_
+    // để hiển thị giống hệt cách tử số hiển thị: số nguyên nếu tròn, chỉ giữ thập phân nếu người
+    // nhập có thập phân thật (parseFloat tự bỏ các số 0 thừa vô nghĩa).
+    const ndVal = (r[13]!==''&&r[13]!=null) ? `${fmtNumSmart_(r[13])} ${r[14]||''} / ${(r[15]!==''&&r[15]!=null)?fmtNumSmart_(r[15]):'1'} ml` : '';
     bodyRows+=`<tr>
       <td class="stt-col">${i+1}</td>
       <td>${r[6]||''}</td>
@@ -3210,7 +3223,10 @@ async function saveForm(){
   const pfx=String(SD.getFullYear()).slice(-1)+String(SD.getMonth()+1).padStart(2,'0')+String(SD.getDate()).padStart(2,'0')+khoaCode;
 
   // ── Khởi động GET barcode NGAY (chạy song song trong khi CPU xây dựng data) ──
-  const barcodePromise=fetch(su+'?action=reserve&khoaCode='+encodeURIComponent(khoaCode))
+  // Thêm tham số "_t" (timestamp) để CHỐNG CACHE — nếu không, trình duyệt có thể trả về
+  // y hệt kết quả GET đã cache từ lần lưu trước (cùng URL), khiến 3 số cuối MSBB bị "đứng yên"
+  // không tăng lên dù Apps Script vẫn tính đúng ở phía server. Đây là nguyên nhân của lỗi đã gặp.
+  const barcodePromise=fetch(su+'?action=reserve&khoaCode='+encodeURIComponent(khoaCode)+'&_t='+Date.now(), {cache:'no-store'})
     .then(r=>r.ok?r.json():{}).catch(()=>({}));
 
   // ── Trích xuất thành viên theo ngày TRANG 1 (user-set, không tự advance) ──
