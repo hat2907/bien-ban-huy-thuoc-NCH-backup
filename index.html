@@ -1118,7 +1118,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
       </div>
     </div>
   </div>
-</div><!-- /s-form
+</div><!-- /s-form -->
 
 <!-- Nội dung thay thế khi có lệnh in trang biên bản mà chưa lưu thành công -->
 <div id="printBlockNotice">
@@ -1128,7 +1128,7 @@ tr.note-row td{padding:4px 10px;border-top:1px dashed #ddd;}
 </div>
 
 <script>
-const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIlEPLBgVAvz7aWBqe8aTnuAKc_PJFvj_qND3d2YTN8RACqBO9YdzHGCOymqYx7itRbiJfEOdzL3PN/pub?output=csv';
+const HARDCODED_CONFIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvCxR-7JPx-DakwsRf4Bwoc1PN8JXh9Dn3V7hQZXFmbMins9XwEXwHcPPmssVf8lH4vSyl3bO9bdNp/pub?output=csv';
 // Nếu admin đổi URL cấu hình qua nút "Đổi cấu hình" (promptChangeConfigUrl), giá trị được lưu ở đây
 // và ưu tiên áp dụng CHỈ TRÊN TRÌNH DUYỆT NÀY — không ảnh hưởng tới thiết bị khác.
 let RUNTIME_CONFIG_URL_OVERRIDE = localStorage.getItem('configUrlOverride') || '';
@@ -2374,7 +2374,11 @@ function go(id){
   }catch(e){/* iframe/preview context — history API blocked, safe to ignore */}
   // Auto-refresh connections when navigating
   if(id==='s-home'||id==='s-form'){
-    silentRefreshAll().then(()=>{
+    // Lớp bảo hiểm cuối: dù bất kỳ nguồn dữ liệu nào bị treo/lỗi không lường trước được,
+    // sau tối đa 12 giây vẫn PHẢI khởi tạo xong giao diện — không để biên bản bị kẹt vĩnh viễn
+    // ở trạng thái "Đang đồng bộ" chỉ vì 1 nguồn dữ liệu (vd Sheet thông báo) gặp sự cố.
+    const safetyTimeout=new Promise(resolve=>setTimeout(resolve,12000));
+    Promise.race([silentRefreshAll(),safetyTimeout]).catch(e=>console.error('silentRefreshAll:',e)).finally(()=>{
       if(id==='s-form'&&!document.querySelectorAll('#tbody tr:not(.note-row)').length){
         addRow();addRow();addRow();
       }
@@ -2475,7 +2479,7 @@ async function applyConfig(silent){
   if(!u){ if(!silent) alert('URL không hợp lệ.'); return; }
   if(!silent) setSt('configStatus','ld','⏳ Đang tải cấu hình…');
   try{
-    const res = await fetch(u);
+    const res = await fetchWithTimeout(u);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = parseCsv(await res.text());
     // Parse key→value (skip header row if header contains "key")
@@ -2683,6 +2687,16 @@ window.addEventListener('afterprint',()=>{
 });
 
 /* ── URL PARSER ── */
+/* fetch có giới hạn thời gian chờ — tránh trường hợp 1 nguồn dữ liệu (vd Sheet cấu hình sai định dạng,
+   URL không phản hồi, lỗi CORS treo…) làm "treo" luôn cả chuỗi đồng bộ (silentRefreshAll/Promise.allSettled),
+   khiến giao diện biên bản bị kẹt mãi ở trạng thái "Đang tải" dù các cấu hình khác vẫn đúng. */
+function fetchWithTimeout(url, ms){
+  ms = ms || 10000;
+  return Promise.race([
+    fetch(url),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Hết thời gian chờ khi tải dữ liệu (timeout)')), ms))
+  ]);
+}
 function buildCsvUrl(u){
   u=u.trim();
   const pm=u.match(/\/spreadsheets\/d\/e\/([A-Za-z0-9_-]+)/);
@@ -2773,7 +2787,7 @@ async function connectSheet(silent){
   if(!u){if(!silent)alert('URL không nhận ra. Dùng link "Publish to web" dạng .../pub?output=csv hoặc link chỉnh sửa thông thường.');return;}
   setSt('dbStatus','ld','⏳ Đang tải…');
   try{
-    const res=await fetch(u);
+    const res=await fetchWithTimeout(u);
     if(!res.ok)throw new Error(`HTTP ${res.status} — kiểm tra quyền Sheet`);
     const db=parseDrugCsv(await res.text());
     if(!db.length)throw new Error('Không đọc được dữ liệu. Kiểm tra tiêu đề cột.');
@@ -3362,7 +3376,7 @@ async function loadOutSheet(silent, source){
   if(!u){if(!silent)alert('URL không hợp lệ.');return;}
   setSt(stId,'ld','⏳ Đang tải…');
   try{
-    const res=await fetch(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const res=await fetchWithTimeout(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const rows=parseCsv(await res.text());
     if(rows.length<2)throw new Error('Không có dữ liệu.');
     const data=rows.slice(1).filter(r=>r.some(c=>c!==''));
@@ -3587,19 +3601,26 @@ async function loadAnnouncements(silent){
   const raw=silent?localStorage.getItem('announceUrl'):(document.getElementById('announceUrl')?.value||'').trim();
   if(!raw) return;
   const u=buildCsvUrl(raw); if(!u) return;
-  if(!silent) setSt('announceStatus','ld','⏳ Đang tải…');
+  setSt('announceStatus','ld','⏳ Đang tải…');
   try{
-    const res=await fetch(u); if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rows=parseCsv(await res.text());
+    const res=await fetchWithTimeout(u); if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text=await res.text();
+    // Nếu Sheet chưa được "Xuất bản lên web" (Publish to web) đúng cách, hoặc bị chặn quyền xem,
+    // Google trả về 1 trang HTML (vd trang đăng nhập) thay vì CSV — cần báo lỗi rõ thay vì âm thầm
+    // parse ra dữ liệu rác khiến người dùng tưởng "không có gì thay đổi" mà không rõ nguyên nhân.
+    if(/^\s*<(!DOCTYPE|html)/i.test(text)){
+      throw new Error('Nhận được trang HTML thay vì CSV — kiểm tra lại đã "Xuất bản lên web" (Publish to web) đúng tab "ThongBao" ở định dạng CSV, và Sheet đã cho phép "Anyone with the link" xem chưa.');
+    }
+    const rows=parseCsv(text);
     // Cột: Thời gian, Tiêu đề, Nội dung, Ảnh (URL), Người đăng
     ANNOUNCEMENTS=rows.slice(1)
       .filter(r=>r.some(c=>c))
       .map(r=>({thoiGian:(r[0]||'').trim(),tieuDe:(r[1]||'').trim(),noiDung:(r[2]||'').trim(),anhUrl:(r[3]||'').trim(),nguoiDang:(r[4]||'').trim()}))
       .reverse(); // mới đăng gần nhất lên đầu (Sheet ghi theo thứ tự thêm dòng, cũ→mới)
-    if(!silent) setSt('announceStatus','ok',`✅ ${ANNOUNCEMENTS.length} thông báo — ${new Date().toLocaleTimeString('vi-VN')}`);
+    setSt('announceStatus','ok',`✅ ${ANNOUNCEMENTS.length} thông báo — ${new Date().toLocaleTimeString('vi-VN')}`);
     updateAnnounceBadge();
   }catch(e){
-    if(!silent) setSt('announceStatus','err','🔴 '+e.message);
+    setSt('announceStatus','err','🔴 '+e.message);
   }
 }
 
@@ -3694,7 +3715,7 @@ async function loadScheduleSheet(silent){
   if(!raw)return;
   const u=buildCsvUrl(raw);if(!u)return;
   try{
-    const res=await fetch(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const res=await fetchWithTimeout(u);if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const rows=parseCsv(await res.text());
     SCHEDULE_DATA=parseScheduleMatrix_(rows);
     _scheduleDayAssignCache=null; // dữ liệu lịch vừa đồng bộ lại — xoá cache phân công theo ngày cũ
@@ -4009,7 +4030,7 @@ async function loadDeptsFromSheet(silent){
   if(!u){if(!silent)alert('URL không hợp lệ.');return;}
   setSt('deptSheetStatus','ld','⏳ Đang tải…');
   try{
-    const res = await fetch(u);
+    const res = await fetchWithTimeout(u);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = parseCsv(await res.text());
     // Column A: tên khoa; Column B: mã khoa 2 số; Column C: cơ sở; Column D: mật khẩu đăng nhập khoa
