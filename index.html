@@ -1268,6 +1268,7 @@ function doLogin(){
   }
   if(u===validUser && p===validPass){
     sessionStorage.setItem('authOk','1');
+    sessionStorage.removeItem('lastSeenAnnounceCount'); // đăng nhập mới → hiện lại số thông báo 1 lần
     clearLoginLock('admin');
     errEl.classList.remove('show');
     document.getElementById('loginPass').value='';
@@ -1361,6 +1362,7 @@ function doKhoaLogin(){
     return;
   }
   sessionStorage.setItem('khoaAuth', JSON.stringify({khoa:matched}));
+  sessionStorage.removeItem('lastSeenAnnounceCount'); // đăng nhập mới → hiện lại số thông báo 1 lần
   clearLoginLock('khoa');
   pInp.value='';
   document.getElementById('khoaPortalTitle').textContent=matched;
@@ -3698,7 +3700,7 @@ function updateAnnounceBadge(){
   // Đếm theo SỐ LƯỢNG thông báo (không so sánh chuỗi ngày giờ dạng "d/m/yyyy, hh:mm:ss" —
   // so sánh chuỗi kiểu đó sai thứ tự thời gian thực, vd "10/9" bị coi nhỏ hơn "6/9" vì so ký tự đầu
   // '1' < '6', gây đếm sai số thông báo chưa xem đúng như lỗi đã gặp).
-  const lastSeenCount=parseInt(localStorage.getItem('lastSeenAnnounceCount')||'0',10);
+  const lastSeenCount=parseInt(sessionStorage.getItem('lastSeenAnnounceCount')||'0',10);
   const unseen=Math.max(0, ANNOUNCEMENTS.length-lastSeenCount);
   badges.forEach(badge=>{
     if(unseen>0){ badge.textContent=unseen>9?'9+':String(unseen); badge.style.display='flex'; }
@@ -3726,14 +3728,14 @@ function openAnnounceModal(){
     : '<div style="text-align:center;color:#999;font-family:Arial,sans-serif;padding:30px 0;">Chưa có thông báo nào.</div>';
   document.getElementById('announceModalOverlay').classList.add('show');
   // Đánh dấu đã xem — ghi nhận theo TỔNG SỐ thông báo hiện có
-  localStorage.setItem('lastSeenAnnounceCount', String(ANNOUNCEMENTS.length));
+  sessionStorage.setItem('lastSeenAnnounceCount', String(ANNOUNCEMENTS.length));
   updateAnnounceBadge();
   loadAnnouncements(true).then(()=>{
     // Nếu vừa tải được thông báo mới hơn trong lúc mở, hiển thị lại danh sách
     body.innerHTML = ANNOUNCEMENTS.length
       ? ANNOUNCEMENTS.map(announceCardHtml).join('')
       : '<div style="text-align:center;color:#999;font-family:Arial,sans-serif;padding:30px 0;">Chưa có thông báo nào.</div>';
-    localStorage.setItem('lastSeenAnnounceCount', String(ANNOUNCEMENTS.length));
+    sessionStorage.setItem('lastSeenAnnounceCount', String(ANNOUNCEMENTS.length));
     updateAnnounceBadge();
   });
 }
@@ -3938,23 +3940,24 @@ function parseScheduleMatrix_(rows){
 
   // 4) Đọc TẤT CẢ các hàng dữ liệu từ dataStart tới hết Sheet — không giới hạn số dòng, nên khi
   //    thêm thành viên mới xuống các dòng phía dưới, lần đồng bộ kế tiếp vẫn đọc được đầy đủ.
-  //    Cột A = tên, cột B = đơn vị công tác, các cột ngày = "x" hoặc số 1-6. Dòng trống xen giữa
-  //    (nếu có) chỉ bị BỎ QUA, không làm dừng việc đọc các dòng phía sau.
+  //    Cột A = tên, cột B = đơn vị công tác, cột C = Cơ sở (1/2…), các cột ngày (từ cột D) =
+  //    "x" hoặc số 1-6. Dòng trống xen giữa (nếu có) chỉ bị BỎ QUA, không làm dừng đọc các dòng sau.
   const out=[];
   for(let i=dataStart;i<rows.length;i++){
     const row=rows[i]||[];
     const ten=(row[0]||'').trim();
     if(!ten) continue;
     const khoa=(row[1]||'').trim();
+    const coSo=(row[2]||'').trim();
     Object.keys(colToDate).forEach(ciStr=>{
       const ci=parseInt(ciStr,10);
       const val=(row[ci]||'').trim();
       if(!val) return;
       const date=colToDate[ci];
       if(/^x$/i.test(val)){
-        out.push({ten,khoa,coSo:'',_date:date,pos:'x'});
+        out.push({ten,khoa,coSo,_date:date,pos:'x'});
       }else if(/^[1-6]$/.test(val)){
-        out.push({ten,khoa,coSo:'',_date:date,pos:parseInt(val,10)});
+        out.push({ten,khoa,coSo,_date:date,pos:parseInt(val,10)});
       }
     });
   }
@@ -3965,31 +3968,48 @@ function parseScheduleMatrix_(rows){
 const SCHEDULE_POS_ORDER=[1,2,3,4,6];
 const SCHEDULE_EMPTY_LOOKAHEAD_DAYS=15;
 
-/** true nếu KHÔNG có bất kỳ ai (x hay số) được phân công vào ngày này — cột hoàn toàn trống */
-function isScheduleDateEmpty_(dateObj){
-  return !SCHEDULE_DATA.some(r=>r._date && r._date.toDateString()===dateObj.toDateString());
+/** Lọc các phân công của 1 ngày theo đúng CƠ SỞ của khoa lập biên bản (cosoN).
+ *  Nếu lọc theo cơ sở mà KHÔNG ra kết quả nào (vd dữ liệu lịch chưa gắn cơ sở, hoặc cosoN rỗng),
+ *  dùng lại toàn bộ danh sách của ngày đó để không làm mất dữ liệu — chỉ ưu tiên lọc khi có thể. */
+function filterByCoSo_(entries, cosoN){
+  if(!cosoN) return entries;
+  const filtered=entries.filter(r=>{
+    const rc=(r.coSo||'').trim().toLowerCase();
+    return !rc || rc===cosoN;
+  });
+  return filtered.length ? filtered : entries;
 }
 
-/** Nguyên tắc: nếu cột ngày biên bản trống hoàn toàn (không "x", không số nào), tự động lấy
- *  thành viên của NGÀY SAU ĐÓ GẦN NHẤT không trống hoàn toàn (ngày biên bản vẫn giữ nguyên,
- *  chỉ đổi NGUỒN lấy thành viên). Chỉ tìm trong tối đa 15 ngày kế tiếp — nếu vẫn không thấy
- *  ngày nào có phân công, để trống hoàn toàn thành viên tham gia (không lùi xa hơn nữa). */
-function resolveScheduleSourceDate(targetDate){
-  if(!isScheduleDateEmpty_(targetDate)) return targetDate;
+/** true nếu KHÔNG có bất kỳ ai (x hay số) được phân công vào ngày này, ĐÚNG CƠ SỞ đang xét
+ *  — cột hoàn toàn trống */
+function isScheduleDateEmpty_(dateObj, cosoN){
+  const sameDate=SCHEDULE_DATA.filter(r=>r._date && r._date.toDateString()===dateObj.toDateString());
+  if(!sameDate.length) return true;
+  return filterByCoSo_(sameDate, cosoN).length===0;
+}
+
+/** Nguyên tắc: nếu cột ngày biên bản trống hoàn toàn (không "x", không số nào — xét đúng cơ sở),
+ *  tự động lấy thành viên của NGÀY SAU ĐÓ GẦN NHẤT không trống hoàn toàn (ngày biên bản vẫn giữ
+ *  nguyên, chỉ đổi NGUỒN lấy thành viên). Chỉ tìm trong tối đa 15 ngày kế tiếp — nếu vẫn không
+ *  thấy ngày nào có phân công, để trống hoàn toàn thành viên tham gia (không lùi xa hơn nữa). */
+function resolveScheduleSourceDate(targetDate, cosoN){
+  if(!isScheduleDateEmpty_(targetDate, cosoN)) return targetDate;
   for(let i=1;i<=SCHEDULE_EMPTY_LOOKAHEAD_DAYS;i++){
     const d=new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate()+i);
-    if(!isScheduleDateEmpty_(d)) return d;
+    if(!isScheduleDateEmpty_(d, cosoN)) return d;
   }
   return null; // Không có ngày nào trong 15 ngày tới có phân công → để trống hoàn toàn
 }
 
-/** Tính TOÀN BỘ phân công (vị trí 1,2,3,4,6) cho 1 ngày nguồn (srcDate) trong MỘT LẦN DUY NHẤT,
- *  rồi trả về map {vị trí: thành viên} — đảm bảo mọi vị trí đều được xét dựa trên ĐÚNG 1 danh sách
- *  thành viên chung của ngày đó, tránh việc tính rời rạc từng vị trí dẫn tới bỏ sót thành viên. */
-function buildScheduleDayAssignments_(srcDate){
+/** Tính TOÀN BỘ phân công (vị trí 1,2,3,4,6) cho 1 ngày nguồn (srcDate) + đúng cơ sở, trong
+ *  MỘT LẦN DUY NHẤT, rồi trả về map {vị trí: thành viên} — đảm bảo mọi vị trí đều được xét dựa
+ *  trên ĐÚNG 1 danh sách thành viên chung của ngày đó, tránh việc tính rời rạc từng vị trí dẫn
+ *  tới bỏ sót thành viên. */
+function buildScheduleDayAssignments_(srcDate, cosoN){
   const map={};
   if(!srcDate) return map;
-  const sameDate=SCHEDULE_DATA.filter(r=>r._date && r._date.toDateString()===srcDate.toDateString());
+  let sameDate=SCHEDULE_DATA.filter(r=>r._date && r._date.toDateString()===srcDate.toDateString());
+  sameDate=filterByCoSo_(sameDate, cosoN);
   if(!sameDate.length) return map;
   // 1) Gán trước TẤT CẢ những người điền SỐ cố định đúng vị trí của họ
   const filledPositions=new Set();
@@ -4007,21 +4027,21 @@ function buildScheduleDayAssignments_(srcDate){
   return map;
 }
 
-// Cache theo ngày (chuỗi toDateString) để không phải tính lại nhiều lần khi gọi liên tiếp
-// cho từng vị trí 1,2,3,4,6 của CÙNG một ngày — đồng thời đảm bảo mọi vị trí luôn dùng
-// chung đúng 1 kết quả nhất quán.
+// Cache theo ngày + cơ sở (chuỗi toDateString + cosoN) để không phải tính lại nhiều lần khi gọi
+// liên tiếp cho từng vị trí 1,2,3,4,6 của CÙNG một ngày/cơ sở — đồng thời đảm bảo mọi vị trí
+// luôn dùng chung đúng 1 kết quả nhất quán.
 let _scheduleDayAssignCache=null;
-function getScheduleDayAssignments_(targetDate){
-  const key=targetDate.toDateString();
+function getScheduleDayAssignments_(targetDate, cosoN){
+  const key=targetDate.toDateString()+'|'+(cosoN||'');
   if(_scheduleDayAssignCache && _scheduleDayAssignCache.key===key) return _scheduleDayAssignCache.map;
-  const srcDate=resolveScheduleSourceDate(targetDate);
-  const map=buildScheduleDayAssignments_(srcDate);
+  const srcDate=resolveScheduleSourceDate(targetDate, cosoN);
+  const map=buildScheduleDayAssignments_(srcDate, cosoN);
   _scheduleDayAssignCache={key,map};
   return map;
 }
 
 function findMemberForPos(pos, targetDate, cosoN){
-  const map=getScheduleDayAssignments_(targetDate);
+  const map=getScheduleDayAssignments_(targetDate, cosoN);
   return map[pos]||null;
 }
 
